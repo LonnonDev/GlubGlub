@@ -1,3 +1,4 @@
 /target
 Cargo.lock
 src/token.rs
+.vscode/settings.json
