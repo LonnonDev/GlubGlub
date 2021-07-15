@@ -3,6 +3,7 @@ use serenity::model::channel::Message;
 use serenity::framework::standard::Args;
 use serenity::framework::standard::macros::{command, group};
 use serenity::framework::standard::CommandResult;
+use serenity::model::id::UserId;
 use tuple_conv::RepeatedTuple;
 use rand::thread_rng;
 use rand::Rng;
@@ -20,13 +21,14 @@ async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
 
 #[command]
 #[aliases("bal")]
-async fn balance(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
-    // if arg.rest() == "" {
-
-    // }
+async fn balance(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    let author = match args.rest() {
+        "" => msg.author.id,
+        _ => args.single::<UserId>().unwrap()
+    };
     //sendmessage(args.rest(), ctx, msg).await;
     let _unused = check_if_registered(msg);
-    let result = search_statement(format!("SELECT * FROM player WHERE id={}", msg.author.id).as_str());
+    let result = search_statement(format!("SELECT * FROM player WHERE id={}", author).as_str());
     let mut bal_message = String::new();
     let mut y = 0;
     for x in result.unwrap().materials {
