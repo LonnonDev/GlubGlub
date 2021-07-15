@@ -27,7 +27,6 @@ pub const GRIST_TYPES: (&'static str, &'static str, &'static str, &'static str, 
 
 const DATABASE_PATH: &str = "../Database.db";
 
-#[allow(dead_code)]
 pub struct Player {
     pub id: i64,
     pub materials: Materials
@@ -56,6 +55,7 @@ pub struct Materials {
     pub zillium: i64,
 }
 
+//* Useful functions for Player
 impl Player {
     pub fn empty() -> Self {
         return Player {
@@ -65,6 +65,7 @@ impl Player {
     }
 }
 
+//* Useful functions for Materials
 impl Materials {
     pub fn empty() -> Self {
         return Materials {
@@ -92,6 +93,7 @@ impl Materials {
     }
 }
 
+//* Makes it so you can iterate through materials
 impl IntoIterator for Materials {
     type Item = i64;
     type IntoIter = std::array::IntoIter<i64, 20>;
@@ -192,6 +194,7 @@ pub fn search_statement(statement: &str) -> Result<Player> {
     return Ok(return_value)
 }
 
+//* Replaces :emojis: with actual emojis
 pub fn format_emojis(text: String) -> String {
     let new_text: String = text
         .replace(":build:", "<:Build:862808331004542987>")
