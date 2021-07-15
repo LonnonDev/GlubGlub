@@ -22,19 +22,20 @@ async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
 #[command]
 #[aliases("bal")]
 async fn balance(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    let author = match args.rest() {
+    let authorid = match args.rest() {
         "" => msg.author.id,
-        _ => args.single::<UserId>().unwrap()
+        _  => args.single::<UserId>().unwrap()
     };
+    let author = msg.guild_id.unwrap().member(ctx, authorid).await.unwrap().user;
     //sendmessage(args.rest(), ctx, msg).await;
     let _unused = check_if_registered(msg);
-    let result = search_statement(format!("SELECT * FROM player WHERE id={}", author).as_str());
+    let result = search_statement(format!("SELECT * FROM player WHERE id={}", authorid).as_str());
     let mut bal_message = String::new();
     let mut y = 0;
     for x in result.unwrap().materials {
         if x != 0 { match bal_message.as_str() {
             "" => bal_message = format!(":{}: {}", GRIST_TYPES.to_vec()[y], x.to_formatted_string(&Locale::en)),
-            _ => bal_message = format!("{}\n:{}: {}", bal_message, GRIST_TYPES.to_vec()[y], x.to_formatted_string(&Locale::en)),}
+            _  => bal_message = format!("{}\n:{}: {}", bal_message, GRIST_TYPES.to_vec()[y], x.to_formatted_string(&Locale::en)),}
         } y += 1;
     }
     if bal_message.as_str() == "" {
@@ -43,12 +44,12 @@ async fn balance(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
     let randcolor: u32 = thread_rng().gen_range(0x000000..0xFFFFFF);
     if let Err(why) = msg.channel_id.send_message(&ctx.http, |m| {
         m.embed(|e| {
-            e.title(format!("{}'s Balance", msg.author.name).as_str());
+            e.title(format!("{}'s Balance", author.name).as_str());
             e.description(format_emojis(bal_message.to_owned()).as_str());
             e.color(randcolor);
             e.author(|a| {
-                a.icon_url(msg.author.avatar_url().unwrap());
-                a.name(msg.author.name.as_str());
+                a.icon_url(author.avatar_url().unwrap());
+                a.name(author.name.as_str());
                 a
             });e
         });m
