@@ -1,8 +1,9 @@
 mod token;
 use crate::token::*;
 mod commands;
-use crate::commands::economy::ECONOMY_GROUP;
-use crate::commands::owner::OWNER_GROUP;
+use crate::commands::economy::*;
+use crate::commands::owner::*;
+use crate::commands::general::*;
 use std::env;
 use serenity::{
     async_trait,
@@ -72,13 +73,18 @@ async fn main() {
     }
 
     let framework = StandardFramework::new()
-        .configure(|c| c.with_whitespace(WithWhiteSpace::from(true)))
-        .configure(|c| c.prefixes(prefix))
-        .configure(|c| c
-        .owners(vec![UserId(859806257774723102)].into_iter().collect()))
+        .configure(|c| {
+            c.with_whitespace(WithWhiteSpace::from(true));
+            c.prefixes(prefix);
+            c.owners(vec![UserId(859806257774723102)].into_iter().collect());
+            c
+        })
         .help(&MY_HELP)
         .group(&ECONOMY_GROUP)
-        .group(&OWNER_GROUP);
+        .group(&OWNER_GROUP)
+        .group(&GENERAL_GROUP)
+        .bucket("basic", |b| b.delay(5).time_span(30).limit(1))
+        .await;
 
     let mut client = Client::builder(&token)
         .event_handler(Handler)
