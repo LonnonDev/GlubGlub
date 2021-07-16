@@ -60,6 +60,45 @@ async fn balance(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
     Ok(())
 }
 
+#[command]
+#[bucket("basic")]
+async fn kill(ctx: &Context, msg: &Message) -> CommandResult {
+    let randcolor: u32 = thread_rng().gen_range(0x000000..0xFFFFFF);
+    let randnum: u8 = thread_rng().gen_range(0..=5);
+    let randommessage: &str = match randnum {
+        0 => "You ripped some puppet ass",
+        1 => "You killed some imps",
+        2 => "You played the market",
+        3 => "You torrented some grist",
+        4 => "You cascaded some monsters",
+        5 => "You gained some ranks",
+        6 => "You caused **the** scratch",
+        _ => "how the fuck did you get here?"
+    };
+    let randnum2: i64 = thread_rng().gen_range(1..30);
+    let result = search_statement(format!("SELECT * FROM player WHERE id={}", msg.author.id.as_u64()).as_str());
+    let player = result.unwrap();
+    let newvalue = randnum2 + player.materials.build;
+    let _unused = sqlstatement(format!("UPDATE player SET build={} WHERE id={}", newvalue, msg.author.id.as_u64()).as_str());
+    if let Err(why) = msg.channel_id.send_message(&ctx.http, |m| {
+        m.embed(|e| {
+            e.title(randommessage);
+            e.description(format_emojis(format!("{} and got :build: {}", randommessage, randnum2)).as_str());
+            e.image("https://media1.tenor.com/images/7d27136cbf1967f8f5d3f0481b3a8c38/tenor.gif");
+            e.color(randcolor);
+            e.author(|a| {
+                a.icon_url(msg.author.avatar_url().unwrap());
+                a.name(msg.author.name.as_str());
+                a
+            });e
+        });m
+    }).await {
+        sendmessage(format!("Error {}", why).as_str(), ctx, msg).await;
+    }
+
+    Ok(())
+}
+
 #[group]
-#[commands(ping, balance)]
-struct Economy;
+#[commands(ping, balance, kill)]
+pub struct Economy;
