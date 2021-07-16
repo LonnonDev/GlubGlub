@@ -4,7 +4,10 @@ mod commands;
 use crate::commands::economy::*;
 use crate::commands::owner::*;
 use crate::commands::general::*;
+use crate::useful::sendmessage;
 use std::env;
+use serenity::framework::standard::DispatchError;
+use serenity::framework::standard::macros::hook;
 use serenity::{
     async_trait,
     model::gateway::Ready,
@@ -54,6 +57,17 @@ async fn my_help(
     Ok(())
 }
 
+#[hook]
+async fn dispatch_error_hook(ctx: &Context, msg: &Message, error: DispatchError) {
+    match error {
+        DispatchError::Ratelimited(rate_limit_info) => {
+            sendmessage(format!("You are being Rate Limited, Error: {:?}", rate_limit_info).as_str(), ctx, msg).await;
+        }
+        _ => println!("Unhandled dispatch error."),
+    }
+}
+
+
 #[tokio::main]
 async fn main() {
     
@@ -84,7 +98,8 @@ async fn main() {
         .group(&OWNER_GROUP)
         .group(&GENERAL_GROUP)
         .bucket("basic", |b| b.delay(5).time_span(30).limit(1))
-        .await;
+        .await
+        .on_dispatch_error(dispatch_error_hook);
 
     let mut client = Client::builder(&token)
         .event_handler(Handler)
