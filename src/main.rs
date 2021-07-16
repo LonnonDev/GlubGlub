@@ -3,6 +3,7 @@ use crate::token::*;
 mod commands;
 use crate::commands::economy::ECONOMY_GROUP;
 use crate::commands::owner::OWNER_GROUP;
+use crate::commands::general::GENERAL_GROUP;
 use std::env;
 use serenity::{
     async_trait,
@@ -78,7 +79,8 @@ async fn main() {
         .owners(vec![UserId(859806257774723102)].into_iter().collect()))
         .help(&MY_HELP)
         .group(&ECONOMY_GROUP)
-        .group(&OWNER_GROUP);
+        .group(&OWNER_GROUP)
+        .group(&GENERAL_GROUP);
 
     let mut client = Client::builder(&token)
         .event_handler(Handler)
