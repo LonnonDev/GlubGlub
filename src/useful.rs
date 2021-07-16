@@ -136,11 +136,19 @@ pub async fn sendmessage(message: &str, ctx: &Context, msg: &Message) {
     }
 }
 
+//* Executes a sql statement
+pub fn sqlstatement(statement: &str) -> Result<()> {
+    let conn = Connection::open(DATABASE_PATH)?;
+    let addplayer = conn.execute(statement, params![]);
+    if let Err(err) = conn.close() {println!("{}", err.1);}
+    if let Err(err) = addplayer {println!("{}", err)}
+    Ok(())
+}
+
 //* Checks if the user has an entry in the DB
 pub fn check_if_registered(msg: &Message) -> Result<()> {
     let result = search_statement(format!("SELECT * FROM player WHERE id={}", msg.author.id).as_str());
     let player = result.unwrap();
-    println!("{}", player.id);
     //# if `player.id` is 0 then they don't have an entry
     if player.id == 0 {
         let conn = Connection::open(DATABASE_PATH)?;
