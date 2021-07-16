@@ -140,7 +140,6 @@ pub async fn sendmessage(message: &str, ctx: &Context, msg: &Message) {
 pub fn check_if_registered(msg: &Message) -> Result<()> {
     let result = search_statement(format!("SELECT * FROM player WHERE id={}", msg.author.id).as_str());
     let player = result.unwrap();
-    println!("{}", player.id);
     //# if `player.id` is 0 then they don't have an entry
     if player.id == 0 {
         let conn = Connection::open(DATABASE_PATH)?;
