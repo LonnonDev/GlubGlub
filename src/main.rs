@@ -60,11 +60,22 @@ async fn my_help(
 #[hook]
 async fn dispatch_error_hook(ctx: &Context, msg: &Message, error: DispatchError) {
     match error {
-        DispatchError::Ratelimited(rate_limit_info) => {
-            sendmessage(format!("You are being Rate Limited, Error: {:?}", rate_limit_info).as_str(), ctx, msg).await;
-        }
-        _ => println!("Unhandled dispatch error."),
+        DispatchError::Ratelimited(rate_limit_info) => println!("Unhandled dispatch error."),
+        DispatchError::CheckFailed(_, _) => todo!(),
+        DispatchError::CommandDisabled(_) => todo!(),
+        DispatchError::BlockedUser => todo!(),
+        DispatchError::BlockedGuild => todo!(),
+        DispatchError::BlockedChannel => todo!(),
+        DispatchError::OnlyForDM => todo!(),
+        DispatchError::OnlyForGuilds => todo!(),
+        DispatchError::OnlyForOwners => todo!(),
+        DispatchError::LackingRole => todo!(),
+        DispatchError::LackingPermissions(_) => todo!(),
+        DispatchError::NotEnoughArguments { min, given } => todo!(),
+        DispatchError::TooManyArguments { max, given } => todo!(),
+        _ => println!("unhandled")
     }
+    
 }
 
 
