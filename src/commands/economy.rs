@@ -22,10 +22,7 @@ async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
 #[command]
 #[aliases("bal")]
 async fn balance(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    let authorid = match args.rest() {
-        "" => msg.author.id,
-        _  => args.single::<UserId>().unwrap()
-    };
+    let authorid = args.single::<UserId>().unwrap_or(msg.author.id);
     let author = msg.guild_id.unwrap().member(ctx, authorid).await.unwrap().user;
     //sendmessage(args.rest(), ctx, msg).await;
     let _unused = check_if_registered(msg);
@@ -96,6 +93,12 @@ async fn kill(ctx: &Context, msg: &Message) -> CommandResult {
         sendmessage(format!("Error {}", why).as_str(), ctx, msg).await;
     }
 
+    Ok(())
+}
+
+#[command]
+async fn craft(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
+    sendmessage(args.rest(), ctx, msg).await;
     Ok(())
 }
 
