@@ -59,7 +59,7 @@ async fn balance(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 
 #[command]
 #[bucket("basic")]
-async fn kill(ctx: &Context, msg: &Message) -> CommandResult {
+async fn game(ctx: &Context, msg: &Message) -> CommandResult {
     let randcolor: u32 = thread_rng().gen_range(0x000000..0xFFFFFF);
     let randnum: u8 = thread_rng().gen_range(0..=5);
     let randommessage: &str = match randnum {
@@ -103,5 +103,5 @@ async fn craft(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 }
 
 #[group]
-#[commands(ping, balance, kill)]
+#[commands(ping, balance, game)]
 pub struct Economy;
