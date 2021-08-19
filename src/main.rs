@@ -60,7 +60,9 @@ async fn my_help(
 #[hook]
 async fn dispatch_error_hook(ctx: &Context, msg: &Message, error: DispatchError) {
     match error {
-        DispatchError::Ratelimited(rate_limit_info) => println!("Unhandled dispatch error."),
+        DispatchError::Ratelimited(rate_limit_info) => 
+            sendmessage(format!("You are on cooldown for {:?}.", rate_limit_info.rate_limit).as_str(), ctx, msg)
+            .await,
         DispatchError::CheckFailed(_, _) => todo!(),
         DispatchError::CommandDisabled(_) => todo!(),
         DispatchError::BlockedUser => todo!(),
@@ -71,8 +73,6 @@ async fn dispatch_error_hook(ctx: &Context, msg: &Message, error: DispatchError)
         DispatchError::OnlyForOwners => todo!(),
         DispatchError::LackingRole => todo!(),
         DispatchError::LackingPermissions(_) => todo!(),
-        DispatchError::NotEnoughArguments { min, given } => todo!(),
-        DispatchError::TooManyArguments { max, given } => todo!(),
         _ => println!("unhandled")
     }
     
@@ -109,6 +109,8 @@ async fn main() {
         .group(&OWNER_GROUP)
         .group(&GENERAL_GROUP)
         .bucket("basic", |b| b.delay(5).time_span(30).limit(1))
+        .await
+        .bucket("ring", |b| b.delay(5).time_span(60).limit(1))
         .await
         .on_dispatch_error(dispatch_error_hook);
 
