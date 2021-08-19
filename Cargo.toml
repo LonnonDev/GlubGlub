@@ -7,9 +7,9 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rusqlite = { version = "0.25.3", features = ["bundled"] }
-serenity = { version = "0.10.8", features = ["client", "gateway", "rustls_backend", "model", "framework"] }
-tokio = { version = "1.8.1", features = ["macros", "rt-multi-thread"] }
-rand = "0.8.4"
-tuple-conv = "1.0.1"
-num-format = "0.4.0"
+rusqlite = { version = "*", features = ["bundled"] }
+serenity = { version = "*", features = ["client", "gateway", "rustls_backend", "model", "framework"] }
+tokio = { version = "*", features = ["macros", "rt-multi-thread"] }
+rand = "*"
+tuple-conv = "*"
+num-format = "*"
