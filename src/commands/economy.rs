@@ -8,9 +8,7 @@ use tuple_conv::RepeatedTuple;
 use rand::thread_rng;
 use rand::Rng;
 use num_format::{Locale, ToFormattedString};
-use crate::useful::*;
-
-
+use crate::useful::*; 
 
 #[command]
 async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
