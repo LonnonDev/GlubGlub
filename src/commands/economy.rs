@@ -103,5 +103,6 @@ async fn craft(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 }
 
 #[group]
+#[only_in("guilds")]
 #[commands(ping, balance, game)]
 pub struct Economy;
