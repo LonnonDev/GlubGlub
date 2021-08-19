@@ -25,7 +25,7 @@ pub const GRIST_TYPES: (&'static str, &'static str, &'static str, &'static str, 
     "zillium"
 );
 
-const DATABASE_PATH: &str = "/../database.db";
+const DATABASE_PATH: &str = "./database.db";
 
 pub struct Player {
     pub id: i64,
