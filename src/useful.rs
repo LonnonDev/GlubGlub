@@ -25,7 +25,7 @@ pub const GRIST_TYPES: (&'static str, &'static str, &'static str, &'static str, 
     "zillium"
 );
 
-const DATABASE_PATH: &str = "../Database.db";
+const DATABASE_PATH: &str = "../database.db";
 
 pub struct Player {
     pub id: i64,
@@ -98,7 +98,7 @@ impl IntoIterator for Materials {
     type Item = i64;
     type IntoIter = std::array::IntoIter<i64, 20>;
     fn into_iter(self) -> Self::IntoIter {
-        IntoIterator::into_iter([
+        std::array::IntoIter::new([
             self.build,
             self.amber,
             self.amethyst,
