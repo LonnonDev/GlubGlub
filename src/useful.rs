@@ -25,7 +25,7 @@ pub const GRIST_TYPES: (&'static str, &'static str, &'static str, &'static str, 
     "zillium"
 );
 
-const DATABASE_PATH: &str = "../database.db";
+const DATABASE_PATH: &str = "/../database.db";
 
 pub struct Player {
     pub id: i64,
@@ -148,7 +148,7 @@ pub fn sqlstatement(statement: &str) -> Result<()> {
 //* Checks if the user has an entry in the DB
 pub fn check_if_registered(msg: &Message) -> Result<()> {
     let result = search_statement(format!("SELECT * FROM player WHERE id={}", msg.author.id).as_str());
-    let player = result.unwrap();
+    let player = result.unwrap_or(Player { id: 0, materials: Materials::empty() });
     //# if `player.id` is 0 then they don't have an entry
     if player.id == 0 {
         let conn = Connection::open(DATABASE_PATH)?;
