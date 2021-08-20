@@ -2,3 +2,6 @@
 Cargo.lock
 src/token.rs
 .vscode/settings.json
+
+.vscode/tasks.json
+.fuse_hidden00000061000000d3
