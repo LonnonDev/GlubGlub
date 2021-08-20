@@ -1,9 +1,13 @@
 mod token;
 use crate::token::*;
 mod commands;
-use crate::commands::economy::ECONOMY_GROUP;
-use crate::commands::owner::OWNER_GROUP;
+use crate::commands::economy::*;
+use crate::commands::owner::*;
+use crate::commands::general::*;
+use crate::useful::sendmessage;
 use std::env;
+use serenity::framework::standard::DispatchError;
+use serenity::framework::standard::macros::hook;
 use serenity::{
     async_trait,
     model::gateway::Ready,
@@ -53,32 +57,66 @@ async fn my_help(
     Ok(())
 }
 
+#[hook]
+async fn dispatch_error_hook(ctx: &Context, msg: &Message, error: DispatchError) {
+    match error {
+        DispatchError::Ratelimited(rate_limit_info) => 
+            sendmessage(format!("You are on cooldown for {:?}.", rate_limit_info.rate_limit).as_str(), ctx, msg)
+            .await,
+        DispatchError::CheckFailed(_, _) => todo!(),
+        DispatchError::CommandDisabled(_) => todo!(),
+        DispatchError::BlockedUser => todo!(),
+        DispatchError::BlockedGuild => todo!(),
+        DispatchError::BlockedChannel => todo!(),
+        DispatchError::OnlyForDM => todo!(),
+        DispatchError::OnlyForGuilds => todo!(),
+        DispatchError::OnlyForOwners => todo!(),
+        DispatchError::LackingRole => todo!(),
+        DispatchError::LackingPermissions(_) => todo!(),
+        _ => println!("unhandled")
+    }
+    
+}
+
+
 #[tokio::main]
 async fn main() {
-    
-    let args: Vec<String> = env::args().collect();
+    let bot_type = env::args().collect::<Vec<String>>();
     let token: &str;
     let prefix: Vec<&str>;
-    if args[1] == "beta" {
-        println!("Beta Bot");
-        token = BETA_TOKEN;
-        prefix = vec!["bluh", "Bluh"]
-    } else if args[1] == "stable" {
-        println!("Stable Bot");
-        token = STABLE_TOKEN;
-        prefix = vec!["glub", "Glub"]
-    } else {
-        panic!("`{}` is not a valid option for `bot type`, `stable` and `beta` are valid options", args[1])
+    match bot_type.get(0).unwrap_or(&"beta".to_owned()).as_str() {
+        "beta" => {
+            println!("Beta Bot");
+            token = BETA_TOKEN;
+            prefix = vec!["bluh", "Bluh"]
+        },
+        "stable" => {
+            println!("Stable Bot");
+            token = STABLE_TOKEN;
+            prefix = vec!["glub", "Glub"];
+        },
+        _ => {
+            println!("Beta Bot");
+            token = BETA_TOKEN;
+            prefix = vec!["bluh", "Bluh"]
+        }
     }
-
     let framework = StandardFramework::new()
-        .configure(|c| c.with_whitespace(WithWhiteSpace::from(true)))
-        .configure(|c| c.prefixes(prefix))
-        .configure(|c| c
-        .owners(vec![UserId(859806257774723102)].into_iter().collect()))
+        .configure(|c| {
+            c.with_whitespace(WithWhiteSpace::from(true));
+            c.prefixes(prefix);
+            c.owners(vec![UserId(859806257774723102)].into_iter().collect());
+            c
+        })
         .help(&MY_HELP)
         .group(&ECONOMY_GROUP)
-        .group(&OWNER_GROUP);
+        .group(&OWNER_GROUP)
+        .group(&GENERAL_GROUP)
+        .bucket("basic", |b| b.delay(5).time_span(30).limit(1))
+        .await
+        .bucket("ring", |b| b.delay(5).time_span(60).limit(1))
+        .await
+        .on_dispatch_error(dispatch_error_hook);
 
     let mut client = Client::builder(&token)
         .event_handler(Handler)

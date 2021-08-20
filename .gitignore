@@ -2,6 +2,13 @@
 Cargo.lock
 src/token.rs
 .vscode/settings.json
+<<<<<<< HEAD
 
 .vscode/tasks.json
 .fuse_hidden00000061000000d3
+=======
+src/resources/ShareX-13.5.0-setup.exe
+src/resources/scoped_dir14912_1094040884/ShareX-13.5.0-setup.exe
+
+.vscode/tasks.json
+>>>>>>> origin/beta

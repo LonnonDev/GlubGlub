@@ -16,5 +16,6 @@ async fn panic(ctx: &Context, msg: &Message) -> CommandResult {
 
 #[group]
 #[commands(panic)]
+#[only_in("guilds")]
 #[owners_only]
-struct Owner;
+pub struct Owner;

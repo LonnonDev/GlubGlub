@@ -25,9 +25,8 @@ pub const GRIST_TYPES: (&'static str, &'static str, &'static str, &'static str, 
     "zillium"
 );
 
-const DATABASE_PATH: &str = "../Database.db";
+const DATABASE_PATH: &str = "./database.db";
 
-#[allow(dead_code)]
 pub struct Player {
     pub id: i64,
     pub materials: Materials
@@ -56,6 +55,7 @@ pub struct Materials {
     pub zillium: i64,
 }
 
+//* Useful functions for Player
 impl Player {
     pub fn empty() -> Self {
         return Player {
@@ -65,6 +65,7 @@ impl Player {
     }
 }
 
+//* Useful functions for Materials
 impl Materials {
     pub fn empty() -> Self {
         return Materials {
@@ -92,11 +93,12 @@ impl Materials {
     }
 }
 
+//* Makes it so you can iterate through materials
 impl IntoIterator for Materials {
     type Item = i64;
     type IntoIter = std::array::IntoIter<i64, 20>;
     fn into_iter(self) -> Self::IntoIter {
-        IntoIterator::into_iter([
+        std::array::IntoIter::new([
             self.build,
             self.amber,
             self.amethyst,
@@ -134,11 +136,19 @@ pub async fn sendmessage(message: &str, ctx: &Context, msg: &Message) {
     }
 }
 
+//* Executes a sql statement
+pub fn sqlstatement(statement: &str) -> Result<()> {
+    let conn = Connection::open(DATABASE_PATH)?;
+    let addplayer = conn.execute(statement, params![]);
+    if let Err(err) = conn.close() {println!("{}", err.1);}
+    if let Err(err) = addplayer {println!("{}", err)}
+    Ok(())
+}
+
 //* Checks if the user has an entry in the DB
 pub fn check_if_registered(msg: &Message) -> Result<()> {
     let result = search_statement(format!("SELECT * FROM player WHERE id={}", msg.author.id).as_str());
-    let player = result.unwrap();
-    println!("{}", player.id);
+    let player = result.unwrap_or(Player { id: 0, materials: Materials::empty() });
     //# if `player.id` is 0 then they don't have an entry
     if player.id == 0 {
         let conn = Connection::open(DATABASE_PATH)?;
@@ -192,27 +202,29 @@ pub fn search_statement(statement: &str) -> Result<Player> {
     return Ok(return_value)
 }
 
+//* Replaces :emojis: with actual emojis
 pub fn format_emojis(text: String) -> String {
     let new_text: String = text
-        .replace(":build:", "<:Build:862808331004542987>")
-        .replace(":amber:", "<:Amber:862808330875699223>")
-        .replace(":amethyst:", "<:Amethyst:862808331155144704>")
-        .replace(":caulk:", "<:Caulk:862808330937434163>")
-        .replace(":chalk:", "<:Chalk:862808330833494037>")
-        .replace(":cobalt:", "<:Cobalt:862808330934419496>")
-        .replace(":diamond:", "<:Diamond:862808330501357599>")
-        .replace(":garnet:", "<:Garnet:862808330892345354>")
-        .replace(":gold:", "<:Gold:862808330846208031>")
-        .replace(":iodine:", "<:Iodine:862808330904010792>")
-        .replace(":marble:", "<:Marble:862808330846208032>")
-        .replace(":mercury:", "<:Mercury:862808330896146452>")
-        .replace(":quartz:", "<:Quartz:862808330836770866>")
-        .replace(":ruby:", "<:Ruby:862808330464264225>")
-        .replace(":rust:", "<:Rust:862808330556932097>")
-        .replace(":shale:", "<:Shale:862808330874912808>")
-        .replace(":sulfur:", "<:Sulfur:862808330815668265>")
-        .replace(":tar:", "<:Tar:862808330833494036>")
-        .replace(":uranium:", "<:Uranium:862808330501357598>")
-        .replace(":zillium:", "<:Zillion:862808330644095008>");
+        .replace(":build:", "<:build:878027836319989790>")
+        .replace(":amber:", "<:amber:878027835531468801>")
+        .replace(":amethyst:", "<:amethyst:878027835959296010>")
+        .replace(":artifact:", "<:artifact:878027835913142292>")
+        .replace(":caulk:", "<:caulk:878027835959296011>")
+        .replace(":chalk:", "<:chalk:878027836261294091>")
+        .replace(":cobalt:", "<:cobalt:878027836072542238>")
+        .replace(":diamond:", "<:diamond:878027836093526036>")
+        .replace(":garnet:", "<:garnet:878027836093521940>")
+        .replace(":gold:", "<:gold:878027835808301108>")
+        .replace(":iodine:", "<:iodine:878027836273864774>")
+        .replace(":marble:", "<:marble:878027836093521941>")
+        .replace(":mercury:", "<:mercury:878027836093521933>")
+        .replace(":quartz:", "<:quartz:878027835929931907>")
+        .replace(":ruby:", "<:ruby:878027836248690788>")
+        .replace(":rust:", "<:rust:878027836210941953>")
+        .replace(":shale:", "<:shale:878027835808301109>")
+        .replace(":sulfur:", "<:sulfur:878027836278063174>")
+        .replace(":tar:", "<:tar:878027836504559626>")
+        .replace(":uranium:", "<:uranium:878027836269674537>")
+        .replace(":zillion:", "<:zillion:878027836093521942>");
     return new_text
 }
