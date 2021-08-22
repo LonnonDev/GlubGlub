@@ -1,3 +1,4 @@
+use rand::{Rng, thread_rng};
 use serenity::client::Context;
 use serenity::model::channel::Message;
 use rusqlite::{Connection, Result, params};
@@ -29,6 +30,7 @@ const DATABASE_PATH: &str = "./database.db";
 
 pub struct Player {
     pub id: i64,
+    pub sprite: String,
     pub materials: Materials
 }
 
@@ -60,6 +62,7 @@ impl Player {
     pub fn empty() -> Self {
         return Player {
             id: 0,
+            sprite: "".to_string(),
             materials: Materials::empty()
         }
     }
@@ -148,7 +151,7 @@ pub fn sqlstatement(statement: &str) -> Result<()> {
 //* Checks if the user has an entry in the DB
 pub fn check_if_registered(msg: &Message) -> Result<()> {
     let result = search_statement(format!("SELECT * FROM player WHERE id={}", msg.author.id).as_str());
-    let player = result.unwrap_or(Player { id: 0, materials: Materials::empty() });
+    let player = result.unwrap_or(Player::empty());
     //# if `player.id` is 0 then they don't have an entry
     if player.id == 0 {
         let conn = Connection::open(DATABASE_PATH)?;
@@ -171,6 +174,7 @@ pub fn search_statement(statement: &str) -> Result<Player> {
     let player_iter = stmt.query_map([], |row| {
         Ok(Player {
             id: row.get(0)?,
+            sprite: "".to_string(),
             materials: Materials {
                 build: row.get(1)?,
                 amber: row.get(2)?,
@@ -227,4 +231,41 @@ pub fn format_emojis(text: String) -> String {
         .replace(":uranium:", "<:uranium:878027836269674537>")
         .replace(":zillion:", "<:zillion:878027836093521942>");
     return new_text
+}
+
+pub async fn get_exile_quote(ctx: &Context, msg: &Message) {
+    let exile_1: Vec<&str> = vec!["What are you doing", "Good job hero"];
+    let exile_2: Vec<&str> = vec!["DO YOU HAVE ANY IDEA WHAT YOU ARE DOING?", "YOU ARE DOING GOOD MAGGOT!"];
+    let exile_3: Vec<&str> = vec!["Good.", "Yes more."];
+    let exile_4: Vec<&str> = vec!["i could do better than that", "what are you doing loser"];
+
+    async fn send_embed(ctx: &Context, msg: &Message, embed_text: &str) {
+        let randcolor: u32 = thread_rng().gen_range(0x000000..0xFFFFFF);
+        if let Err(why) = msg.channel_id.send_message(&ctx.http, |m| {
+            m.embed(|e| {
+                e.title(format!("{}'s Exile", msg.author.name).as_str());
+                e.description(format_emojis(embed_text.to_owned()).as_str());
+                e.color(randcolor);
+                e.author(|a| {
+                    a.icon_url(msg.author.avatar_url().unwrap());
+                    a.name(msg.author.name.as_str());
+                    a
+                });e
+            });m
+        }).await {
+            sendmessage(format!("Error {}", why).as_str(), ctx, msg).await;
+        }
+    }
+    let rand_index: u32 = thread_rng().gen_range(0..exile_1.len() as u32);
+    sendmessage(&exile_1.len().to_string(), ctx, msg).await;
+    let author_exile = (msg.author.id.as_u64() % 4) + 1;
+    if author_exile == 1 {
+        send_embed(ctx, msg, exile_1[rand_index as usize]).await;
+    } else if author_exile == 2 {
+        send_embed(ctx, msg, exile_2[rand_index as usize]).await;
+    } else if author_exile == 3 {
+        send_embed(ctx, msg, exile_3[rand_index as usize]).await;
+    } else if author_exile == 4 {
+        send_embed(ctx, msg, exile_4[rand_index as usize]).await;
+    }
 }
