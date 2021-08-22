@@ -74,7 +74,8 @@ async fn game(ctx: &Context, msg: &Message) -> CommandResult {
     let result = search_statement(format!("SELECT * FROM player WHERE id={}", msg.author.id.as_u64()).as_str());
     let player = result.unwrap();
     let newvalue = randnum2 + player.materials.build;
-    let _unused = sqlstatement(format!("UPDATE player SET build={} WHERE id={}", newvalue, msg.author.id.as_u64()).as_str());
+    let _ = sqlstatement(format!("UPDATE player SET build={} WHERE id={}", newvalue, msg.author.id.as_u64()).as_str());
+    get_exile_quote(ctx, msg).await;
     if let Err(why) = msg.channel_id.send_message(&ctx.http, |m| {
         m.embed(|e| {
             e.title(randommessage);
