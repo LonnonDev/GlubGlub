@@ -13,3 +13,4 @@ tokio = { version = "*", features = ["macros", "rt-multi-thread"] }
 rand = "*"
 tuple-conv = "*"
 num-format = "*"
+futures = "*"
