@@ -1,6 +1,7 @@
+#[macro_export]
 macro_rules! format_emojis {
     ($($arg:tt)*) => {{
-        let res = $crate::fmt::format($crate::__export::format_args!($($arg)*));
+        let res = std::fmt::format(format_args!($($arg)*));
         let new = res.replace(":build:", "<:build:878027836319989790>")
             .replace(":amber:", "<:amber:878027835531468801>")
             .replace(":amethyst:", "<:amethyst:878027835959296010>")
