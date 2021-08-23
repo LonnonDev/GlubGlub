@@ -1,10 +1,11 @@
 mod token;
 use crate::token::*;
+
 mod commands;
 use crate::commands::economy::*;
 use crate::commands::owner::*;
 use crate::commands::general::*;
-use crate::useful::sendmessage;
+
 use std::env;
 use serenity::framework::standard::DispatchError;
 use serenity::framework::standard::macros::hook;
@@ -28,6 +29,9 @@ use serenity::framework::standard::WithWhiteSpace;
 use serenity::prelude::*;
 
 pub mod useful;
+use crate::useful::sendmessage;
+
+pub mod macros;
 
 struct Framework;
 
