@@ -1,3 +1,4 @@
+use rand::{Rng, thread_rng};
 use serenity::client::Context;
 use serenity::model::channel::Message;
 use rusqlite::{Connection, Result, params};
@@ -25,10 +26,11 @@ pub const GRIST_TYPES: (&'static str, &'static str, &'static str, &'static str, 
     "zillium"
 );
 
-const DATABASE_PATH: &str = "../database.db";
+const DATABASE_PATH: &str = "./database.db";
 
 pub struct Player {
     pub id: i64,
+    pub sprite: String,
     pub materials: Materials
 }
 
@@ -60,6 +62,7 @@ impl Player {
     pub fn empty() -> Self {
         return Player {
             id: 0,
+            sprite: "".to_string(),
             materials: Materials::empty()
         }
     }
@@ -148,7 +151,7 @@ pub fn sqlstatement(statement: &str) -> Result<()> {
 //* Checks if the user has an entry in the DB
 pub fn check_if_registered(msg: &Message) -> Result<()> {
     let result = search_statement(format!("SELECT * FROM player WHERE id={}", msg.author.id).as_str());
-    let player = result.unwrap();
+    let player = result.unwrap_or(Player::empty());
     //# if `player.id` is 0 then they don't have an entry
     if player.id == 0 {
         let conn = Connection::open(DATABASE_PATH)?;
@@ -171,6 +174,7 @@ pub fn search_statement(statement: &str) -> Result<Player> {
     let player_iter = stmt.query_map([], |row| {
         Ok(Player {
             id: row.get(0)?,
+            sprite: "".to_string(),
             materials: Materials {
                 build: row.get(1)?,
                 amber: row.get(2)?,
@@ -205,25 +209,63 @@ pub fn search_statement(statement: &str) -> Result<Player> {
 //* Replaces :emojis: with actual emojis
 pub fn format_emojis(text: String) -> String {
     let new_text: String = text
-        .replace(":build:", "<:Build:862808331004542987>")
-        .replace(":amber:", "<:Amber:862808330875699223>")
-        .replace(":amethyst:", "<:Amethyst:862808331155144704>")
-        .replace(":caulk:", "<:Caulk:862808330937434163>")
-        .replace(":chalk:", "<:Chalk:862808330833494037>")
-        .replace(":cobalt:", "<:Cobalt:862808330934419496>")
-        .replace(":diamond:", "<:Diamond:862808330501357599>")
-        .replace(":garnet:", "<:Garnet:862808330892345354>")
-        .replace(":gold:", "<:Gold:862808330846208031>")
-        .replace(":iodine:", "<:Iodine:862808330904010792>")
-        .replace(":marble:", "<:Marble:862808330846208032>")
-        .replace(":mercury:", "<:Mercury:862808330896146452>")
-        .replace(":quartz:", "<:Quartz:862808330836770866>")
-        .replace(":ruby:", "<:Ruby:862808330464264225>")
-        .replace(":rust:", "<:Rust:862808330556932097>")
-        .replace(":shale:", "<:Shale:862808330874912808>")
-        .replace(":sulfur:", "<:Sulfur:862808330815668265>")
-        .replace(":tar:", "<:Tar:862808330833494036>")
-        .replace(":uranium:", "<:Uranium:862808330501357598>")
-        .replace(":zillium:", "<:Zillion:862808330644095008>");
+        .replace(":build:", "<:build:878027836319989790>")
+        .replace(":amber:", "<:amber:878027835531468801>")
+        .replace(":amethyst:", "<:amethyst:878027835959296010>")
+        .replace(":artifact:", "<:artifact:878027835913142292>")
+        .replace(":caulk:", "<:caulk:878027835959296011>")
+        .replace(":chalk:", "<:chalk:878027836261294091>")
+        .replace(":cobalt:", "<:cobalt:878027836072542238>")
+        .replace(":diamond:", "<:diamond:878027836093526036>")
+        .replace(":garnet:", "<:garnet:878027836093521940>")
+        .replace(":gold:", "<:gold:878027835808301108>")
+        .replace(":iodine:", "<:iodine:878027836273864774>")
+        .replace(":marble:", "<:marble:878027836093521941>")
+        .replace(":mercury:", "<:mercury:878027836093521933>")
+        .replace(":quartz:", "<:quartz:878027835929931907>")
+        .replace(":ruby:", "<:ruby:878027836248690788>")
+        .replace(":rust:", "<:rust:878027836210941953>")
+        .replace(":shale:", "<:shale:878027835808301109>")
+        .replace(":sulfur:", "<:sulfur:878027836278063174>")
+        .replace(":tar:", "<:tar:878027836504559626>")
+        .replace(":uranium:", "<:uranium:878027836269674537>")
+        .replace(":zillion:", "<:zillion:878027836093521942>");
     return new_text
+}
+
+pub async fn get_exile_quote(ctx: &Context, msg: &Message) {
+    let exile_1: Vec<&str> = vec!["What are you doing", "Good job hero"];
+    let exile_2: Vec<&str> = vec!["DO YOU HAVE ANY IDEA WHAT YOU ARE DOING?", "YOU ARE DOING GOOD MAGGOT!"];
+    let exile_3: Vec<&str> = vec!["Good.", "Yes more."];
+    let exile_4: Vec<&str> = vec!["i could do better than that", "what are you doing loser"];
+
+    async fn send_embed(ctx: &Context, msg: &Message, embed_text: &str) {
+        let randcolor: u32 = thread_rng().gen_range(0x000000..0xFFFFFF);
+        if let Err(why) = msg.channel_id.send_message(&ctx.http, |m| {
+            m.embed(|e| {
+                e.title(format!("{}'s Exile", msg.author.name).as_str());
+                e.description(format_emojis(embed_text.to_owned()).as_str());
+                e.color(randcolor);
+                e.author(|a| {
+                    a.icon_url(msg.author.avatar_url().unwrap());
+                    a.name(msg.author.name.as_str());
+                    a
+                });e
+            });m
+        }).await {
+            sendmessage(format!("Error {}", why).as_str(), ctx, msg).await;
+        }
+    }
+    let rand_index: u32 = thread_rng().gen_range(0..exile_1.len() as u32);
+    sendmessage(&exile_1.len().to_string(), ctx, msg).await;
+    let author_exile = (msg.author.id.as_u64() % 4) + 1;
+    if author_exile == 1 {
+        send_embed(ctx, msg, exile_1[rand_index as usize]).await;
+    } else if author_exile == 2 {
+        send_embed(ctx, msg, exile_2[rand_index as usize]).await;
+    } else if author_exile == 3 {
+        send_embed(ctx, msg, exile_3[rand_index as usize]).await;
+    } else if author_exile == 4 {
+        send_embed(ctx, msg, exile_4[rand_index as usize]).await;
+    }
 }

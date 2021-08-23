@@ -81,22 +81,26 @@ async fn dispatch_error_hook(ctx: &Context, msg: &Message, error: DispatchError)
 
 #[tokio::main]
 async fn main() {
-    
-    let args: Vec<String> = env::args().collect();
+    let bot_type = env::args().collect::<Vec<String>>();
     let token: &str;
     let prefix: Vec<&str>;
-    if args[1] == "beta" {
-        println!("Beta Bot");
-        token = BETA_TOKEN;
-        prefix = vec!["bluh", "Bluh"]
-    } else if args[1] == "stable" {
-        println!("Stable Bot");
-        token = STABLE_TOKEN;
-        prefix = vec!["glub", "Glub"]
-    } else {
-        panic!("`{}` is not a valid option for `bot type`, `stable` and `beta` are valid options", args[1])
+    match bot_type.get(1).unwrap_or(&"beta".to_owned()).as_str() {
+        "beta" => {
+            println!("Beta Bot");
+            token = BETA_TOKEN;
+            prefix = vec!["bluh", "Bluh"]
+        },
+        "stable" => {
+            println!("Stable Bot");
+            token = STABLE_TOKEN;
+            prefix = vec!["glub", "Glub"];
+        },
+        _ => {
+            println!("Beta Bot");
+            token = BETA_TOKEN;
+            prefix = vec!["bluh", "Bluh"]
+        }
     }
-
     let framework = StandardFramework::new()
         .configure(|c| {
             c.with_whitespace(WithWhiteSpace::from(true));
