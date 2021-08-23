@@ -84,11 +84,7 @@ async fn main() {
     let bot_type = env::args().collect::<Vec<String>>();
     let token: &str;
     let prefix: Vec<&str>;
-<<<<<<< Updated upstream
     match bot_type.get(1).unwrap_or(&"beta".to_owned()).as_str() {
-=======
-    match bot_type.get(0).unwrap_or(&"beta".to_owned()).as_str() {
->>>>>>> Stashed changes
         "beta" => {
             println!("Beta Bot");
             token = BETA_TOKEN;
