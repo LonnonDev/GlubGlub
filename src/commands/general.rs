@@ -10,6 +10,8 @@ use serenity::model::id::UserId;
 use serenity::prelude::Mentionable;
 use crate::useful::*;
 
+use crate::format_emojis;
+
 #[check]
 #[name = "SoulFlame"]
 async fn soul_flame(
@@ -45,9 +47,9 @@ async fn info(ctx: &Context, msg: &Message) -> CommandResult {
     if let Err(why) = msg.channel_id.send_message(&ctx.http, |m| {
         m.embed(|e| {
             e.title(format!("This is a Bot made in Rust").as_str());
-            e.description(format_emojis("This bot is inspired off of homestuck :build:
+            e.description(format_emojis!("This bot is inspired off of homestuck :build:
             This bot is made in the serenity rust api wrapper for discord .
-            ".to_string()).as_str());
+            ").as_str());
             e.color(randcolor);
             e
         });m

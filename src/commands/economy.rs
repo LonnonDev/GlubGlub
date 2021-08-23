@@ -10,6 +10,8 @@ use rand::Rng;
 use num_format::{Locale, ToFormattedString};
 use crate::useful::*; 
 
+use crate::format_emojis;
+
 #[command]
 async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
     sendmessage("pong!", ctx, msg).await;
@@ -40,7 +42,7 @@ async fn balance(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
     if let Err(why) = msg.channel_id.send_message(&ctx.http, |m| {
         m.embed(|e| {
             e.title(format!("{}'s Balance", author.name).as_str());
-            e.description(format_emojis(bal_message.to_owned()).as_str());
+            e.description(format_emojis!("{}", bal_message));
             e.color(randcolor);
             e.author(|a| {
                 a.icon_url(author.avatar_url().unwrap());
@@ -79,7 +81,7 @@ async fn game(ctx: &Context, msg: &Message) -> CommandResult {
     if let Err(why) = msg.channel_id.send_message(&ctx.http, |m| {
         m.embed(|e| {
             e.title(randommessage);
-            e.description(format_emojis(format!("{} and got :build: {}", randommessage, randnum2)).as_str());
+            e.description(format_emojis!("{} and got :build: {}", randommessage, randnum2));
             e.image("https://media1.tenor.com/images/7d27136cbf1967f8f5d3f0481b3a8c38/tenor.gif");
             e.color(randcolor);
             e.author(|a| {
