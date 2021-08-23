@@ -3,6 +3,8 @@ use serenity::client::Context;
 use serenity::model::channel::Message;
 use rusqlite::{Connection, Result, params};
 
+use crate::format_emojis;
+
 pub const GRIST_TYPES: (&'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str) = (
     "build",
     "amber",
@@ -206,33 +208,8 @@ pub fn search_statement(statement: &str) -> Result<Player> {
     return Ok(return_value)
 }
 
-//* Replaces :emojis: with actual emojis
-pub fn format_emojis(text: String) -> String {
-    let new_text: String = text
-        .replace(":build:", "<:build:878027836319989790>")
-        .replace(":amber:", "<:amber:878027835531468801>")
-        .replace(":amethyst:", "<:amethyst:878027835959296010>")
-        .replace(":artifact:", "<:artifact:878027835913142292>")
-        .replace(":caulk:", "<:caulk:878027835959296011>")
-        .replace(":chalk:", "<:chalk:878027836261294091>")
-        .replace(":cobalt:", "<:cobalt:878027836072542238>")
-        .replace(":diamond:", "<:diamond:878027836093526036>")
-        .replace(":garnet:", "<:garnet:878027836093521940>")
-        .replace(":gold:", "<:gold:878027835808301108>")
-        .replace(":iodine:", "<:iodine:878027836273864774>")
-        .replace(":marble:", "<:marble:878027836093521941>")
-        .replace(":mercury:", "<:mercury:878027836093521933>")
-        .replace(":quartz:", "<:quartz:878027835929931907>")
-        .replace(":ruby:", "<:ruby:878027836248690788>")
-        .replace(":rust:", "<:rust:878027836210941953>")
-        .replace(":shale:", "<:shale:878027835808301109>")
-        .replace(":sulfur:", "<:sulfur:878027836278063174>")
-        .replace(":tar:", "<:tar:878027836504559626>")
-        .replace(":uranium:", "<:uranium:878027836269674537>")
-        .replace(":zillion:", "<:zillion:878027836093521942>");
-    return new_text
-}
 
+// Gets exile quote
 pub async fn get_exile_quote(ctx: &Context, msg: &Message) {
     let exile_1: Vec<&str> = vec!["What are you doing", "Good job hero"];
     let exile_2: Vec<&str> = vec!["DO YOU HAVE ANY IDEA WHAT YOU ARE DOING?", "YOU ARE DOING GOOD MAGGOT!"];
@@ -244,7 +221,7 @@ pub async fn get_exile_quote(ctx: &Context, msg: &Message) {
         if let Err(why) = msg.channel_id.send_message(&ctx.http, |m| {
             m.embed(|e| {
                 e.title(format!("{}'s Exile", msg.author.name).as_str());
-                e.description(format_emojis(embed_text.to_owned()).as_str());
+                e.description(format_emojis!("{}", embed_text));
                 e.color(randcolor);
                 e.author(|a| {
                     a.icon_url(msg.author.avatar_url().unwrap());
