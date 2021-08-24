@@ -79,7 +79,6 @@ async fn dispatch_error_hook(ctx: &Context, msg: &Message, error: DispatchError)
         DispatchError::LackingPermissions(_) => todo!(),
         _ => println!("unhandled")
     }
-    
 }
 
 
