@@ -59,7 +59,7 @@ pub struct Materials {
     pub zillium: i64,
 }
 
-//* Useful functions for Player
+// Useful functions for Player
 impl Player {
     pub fn empty() -> Self {
         return Player {
@@ -70,7 +70,7 @@ impl Player {
     }
 }
 
-//* Useful functions for Materials
+// Useful functions for Materials
 impl Materials {
     pub fn empty() -> Self {
         return Materials {
@@ -98,7 +98,7 @@ impl Materials {
     }
 }
 
-//* Makes it so you can iterate through materials
+// Makes it so you can iterate through materials
 impl IntoIterator for Materials {
     type Item = i64;
     type IntoIter = std::array::IntoIter<i64, 20>;
@@ -128,8 +128,9 @@ impl IntoIterator for Materials {
     }
 }
 
-//* Easily send a message
+// Easily send a message
 pub async fn sendmessage(message: &str, ctx: &Context, msg: &Message) {
+    // Send a message or direct message the user saying there was an error
     if let Err(why) = msg.channel_id.say(&ctx.http, message).await {
         if let Err(why2) = msg.author.direct_message(&ctx, |m| {
             m.content(
@@ -141,7 +142,7 @@ pub async fn sendmessage(message: &str, ctx: &Context, msg: &Message) {
     }
 }
 
-//* Executes a sql statement
+// Executes a sql statement
 pub fn sqlstatement(statement: &str) -> Result<()> {
     let conn = Connection::open(DATABASE_PATH)?;
     let addplayer = conn.execute(statement, params![]);
@@ -150,14 +151,16 @@ pub fn sqlstatement(statement: &str) -> Result<()> {
     Ok(())
 }
 
-//* Checks if the user has an entry in the DB
-pub fn check_if_registered(msg: &Message) -> Result<()> {
-    let result = search_statement(format!("SELECT * FROM player WHERE id={}", msg.author.id).as_str());
+// Checks if the user has an entry in the DB
+pub fn check_if_registered(id: u64) -> Result<()> {
+    // Get player
+    let result = search_statement(format!("SELECT * FROM player WHERE id={}", id).as_str());
     let player = result.unwrap_or(Player::empty());
-    //# if `player.id` is 0 then they don't have an entry
+    
+    // if player.id is 0 then they don't have an entry
     if player.id == 0 {
         let conn = Connection::open(DATABASE_PATH)?;
-        let addplayer = conn.execute("INSERT INTO player (id, build, amber, amethyst, caulk, chalk, cobalt, diamond, garnet, gold, iodine, marble, mercury, quartz, ruby, rust, shale, sulfur, tar, uranium, zillium) VALUES (?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)", params![msg.author.id.as_u64()]);
+        let addplayer = conn.execute("INSERT INTO player (id, build, amber, amethyst, caulk, chalk, cobalt, diamond, garnet, gold, iodine, marble, mercury, quartz, ruby, rust, shale, sulfur, tar, uranium, zillium) VALUES (?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)", params![id]);
         if let Err(err) = conn.close() {println!("{}", err.1);}
         if let Err(err) = addplayer {println!("{}", err)}
     }
@@ -165,14 +168,14 @@ pub fn check_if_registered(msg: &Message) -> Result<()> {
     Ok(())
 }
 
-//* SQLite search statement
+// SQLite search statement
 pub fn search_statement(statement: &str) -> Result<Player> {
     let conn = Connection::open(DATABASE_PATH)?;
     let mut stmt = conn.prepare(
         statement,
     )?;
     
-    //# Create `Player` struct
+    // Create Player struct
     let player_iter = stmt.query_map([], |row| {
         Ok(Player {
             id: row.get(0)?,
@@ -211,11 +214,13 @@ pub fn search_statement(statement: &str) -> Result<Player> {
 
 // Gets exile quote
 pub async fn get_exile_quote(ctx: &Context, msg: &Message) {
+    // Exile quotes
     let exile_1: Vec<&str> = vec!["What are you doing", "Good job hero"];
     let exile_2: Vec<&str> = vec!["DO YOU HAVE ANY IDEA WHAT YOU ARE DOING?", "YOU ARE DOING GOOD MAGGOT!"];
     let exile_3: Vec<&str> = vec!["Good.", "Yes more."];
     let exile_4: Vec<&str> = vec!["i could do better than that", "what are you doing loser"];
 
+    // Send embed function
     async fn send_embed(ctx: &Context, msg: &Message, embed_text: &str) {
         let randcolor: u32 = thread_rng().gen_range(0x000000..0xFFFFFF);
         if let Err(why) = msg.channel_id.send_message(&ctx.http, |m| {
@@ -233,8 +238,11 @@ pub async fn get_exile_quote(ctx: &Context, msg: &Message) {
             sendmessage(format!("Error {}", why).as_str(), ctx, msg).await;
         }
     }
+
+    // Random index for exile quote
     let rand_index: u32 = thread_rng().gen_range(0..exile_1.len() as u32);
-    sendmessage(&exile_1.len().to_string(), ctx, msg).await;
+
+    // Send exile quote
     let author_exile = (msg.author.id.as_u64() % 4) + 1;
     if author_exile == 1 {
         send_embed(ctx, msg, exile_1[rand_index as usize]).await;
