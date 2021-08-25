@@ -30,7 +30,7 @@ async fn balance(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
     let _ = check_if_registered(*author_id.as_u64());
 
     // Get the players grist
-    let result = search_statement(format!("SELECT * FROM player WHERE id={}", author_id).as_str());
+    let result = get_player(*author_id.as_u64());
 
     // Put all of the grist the user has in a string
     let mut bal_message = String::new();
@@ -92,7 +92,7 @@ async fn game(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let random_grist: i64 = thread_rng().gen_range(1..30);
 
     // Get the player
-    let result = search_statement(format!("SELECT * FROM player WHERE id={}", author.id.as_u64()).as_str());
+    let result = get_player(*author_id.as_u64());
     let player = result.unwrap();
 
     // Get the new grist value, and update the player
