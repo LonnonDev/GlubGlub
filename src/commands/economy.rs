@@ -22,11 +22,17 @@ async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
 #[command]
 #[aliases("bal")]
 async fn balance(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    let authorid = args.single::<UserId>().unwrap_or(msg.author.id);
-    let author = msg.guild_id.unwrap().member(ctx, authorid).await.unwrap().user;
-    //sendmessage(args.rest(), ctx, msg).await;
-    let _unused = check_if_registered(msg);
-    let result = search_statement(format!("SELECT * FROM player WHERE id={}", authorid).as_str());
+    // Get author id
+    let author_id = args.single::<UserId>().unwrap_or(msg.author.id);
+    let author = msg.guild_id.unwrap().member(ctx, author_id).await.unwrap().user;
+
+    // Registers the user if they don't exist
+    let _ = check_if_registered(*author_id.as_u64());
+
+    // Get the players grist
+    let result = search_statement(format!("SELECT * FROM player WHERE id={}", author_id).as_str());
+
+    // Put all of the grist the user has in a string
     let mut bal_message = String::new();
     let mut y = 0;
     for x in result.unwrap().materials {
@@ -38,6 +44,8 @@ async fn balance(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
     if bal_message.as_str() == "" {
         bal_message = "You have Nothing...".to_string();
     }
+
+    // Random color for embed and send embed
     let randcolor: u32 = thread_rng().gen_range(0x000000..0xFFFFFF);
     if let Err(why) = msg.channel_id.send_message(&ctx.http, |m| {
         m.embed(|e| {
@@ -59,9 +67,16 @@ async fn balance(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 
 #[command]
 #[bucket("basic")]
-async fn game(ctx: &Context, msg: &Message) -> CommandResult {
-    let randcolor: u32 = thread_rng().gen_range(0x000000..0xFFFFFF);
-    let randnum: u8 = thread_rng().gen_range(0..=5);
+async fn game(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    // Get author id
+    let author_id = args.single::<UserId>().unwrap_or(msg.author.id);
+    let author = msg.guild_id.unwrap().member(ctx, author_id).await.unwrap().user;
+
+    // Registers the user if they don't exist
+    let _ = check_if_registered(*author_id.as_u64());
+
+    // Random message for the embed
+    let randnum: u8 = thread_rng().gen_range(0..=6);
     let randommessage: &str = match randnum {
         0 => "You ripped some puppet ass",
         1 => "You killed some imps",
@@ -72,16 +87,27 @@ async fn game(ctx: &Context, msg: &Message) -> CommandResult {
         6 => "You caused **the** scratch",
         _ => "how the fuck did you get here?"
     };
-    let randnum2: i64 = thread_rng().gen_range(1..30);
-    let result = search_statement(format!("SELECT * FROM player WHERE id={}", msg.author.id.as_u64()).as_str());
+
+    // Random Amount of Grist
+    let random_grist: i64 = thread_rng().gen_range(1..30);
+
+    // Get the player
+    let result = search_statement(format!("SELECT * FROM player WHERE id={}", author.id.as_u64()).as_str());
     let player = result.unwrap();
-    let newvalue = randnum2 + player.materials.build;
-    let _ = sqlstatement(format!("UPDATE player SET build={} WHERE id={}", newvalue, msg.author.id.as_u64()).as_str());
+
+    // Get the new grist value, and update the player
+    let newvalue = random_grist + player.materials.build;
+    let _ = sqlstatement(format!("UPDATE player SET build={} WHERE id={}", newvalue, author.id.as_u64()).as_str());
+
+    // Send exile quote
     get_exile_quote(ctx, msg).await;
+
+    // Random color for embed and Send embed
+    let randcolor: u32 = thread_rng().gen_range(0x000000..0xFFFFFF);
     if let Err(why) = msg.channel_id.send_message(&ctx.http, |m| {
         m.embed(|e| {
             e.title(randommessage);
-            e.description(format_emojis!("{} and got :build: {}", randommessage, randnum2));
+            e.description(format_emojis!("You got :build: {}", random_grist));
             e.image("https://media1.tenor.com/images/7d27136cbf1967f8f5d3f0481b3a8c38/tenor.gif");
             e.color(randcolor);
             e.author(|a| {
@@ -96,7 +122,8 @@ async fn game(ctx: &Context, msg: &Message) -> CommandResult {
 
     Ok(())
 }
-
+ 
+//TODO Implement Achlemizing
 #[command]
 async fn craft(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     sendmessage(args.rest(), ctx, msg).await;
