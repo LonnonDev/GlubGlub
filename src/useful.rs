@@ -64,7 +64,7 @@ impl Player {
     pub fn empty() -> Self {
         return Player {
             id: 0,
-            sprite: "".to_string(),
+            sprite: "Empty".to_string(),
             materials: Materials::empty()
         }
     }
@@ -154,13 +154,15 @@ pub fn sqlstatement(statement: &str) -> Result<()> {
 // Checks if the user has an entry in the DB
 pub fn check_if_registered(id: u64) -> Result<()> {
     // Get player
-    let result = search_statement(format!("SELECT * FROM player WHERE id={}", id).as_str());
+    let result = get_player(id);
     let player = result.unwrap_or(Player::empty());
     
     // if player.id is 0 then they don't have an entry
+    // so then create an entry
     if player.id == 0 {
         let conn = Connection::open(DATABASE_PATH)?;
-        let addplayer = conn.execute("INSERT INTO player (id, build, amber, amethyst, caulk, chalk, cobalt, diamond, garnet, gold, iodine, marble, mercury, quartz, ruby, rust, shale, sulfur, tar, uranium, zillium) VALUES (?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)", params![id]);
+        let addplayer = conn.execute("
+        INSERT INTO player (id) VALUES (?)", params![id]);
         if let Err(err) = conn.close() {println!("{}", err.1);}
         if let Err(err) = addplayer {println!("{}", err)}
     }
@@ -169,17 +171,17 @@ pub fn check_if_registered(id: u64) -> Result<()> {
 }
 
 // SQLite search statement
-pub fn search_statement(statement: &str) -> Result<Player> {
+pub fn get_player(author_id: u64) -> Result<Player> {
     let conn = Connection::open(DATABASE_PATH)?;
     let mut stmt = conn.prepare(
-        statement,
+        format!("SELECT * FROM player WHERE id={}", author_id).as_str(),
     )?;
     
     // Create Player struct
     let player_iter = stmt.query_map([], |row| {
         Ok(Player {
             id: row.get(0)?,
-            sprite: "".to_string(),
+            sprite: row.get(21)?,
             materials: Materials {
                 build: row.get(1)?,
                 amber: row.get(2)?,
@@ -208,6 +210,8 @@ pub fn search_statement(statement: &str) -> Result<Player> {
     for player in player_iter {
         return_value = player.unwrap();
     }
+
+
     return Ok(return_value)
 }
 
