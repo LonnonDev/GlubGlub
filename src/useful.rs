@@ -33,6 +33,8 @@ const DATABASE_PATH: &str = "./database.db";
 pub struct Player {
     pub id: i64,
     pub sprite: String,
+    pub class: String,
+    pub aspect: String,
     pub materials: Materials
 }
 
@@ -65,6 +67,8 @@ impl Player {
         return Player {
             id: 0,
             sprite: "Empty".to_string(),
+            class: "Bard".to_string(),
+            aspect: "Light".to_string(),
             materials: Materials::empty()
         }
     }
@@ -182,6 +186,8 @@ pub fn get_player(author_id: u64) -> Result<Player> {
         Ok(Player {
             id: row.get(0)?,
             sprite: row.get(21)?,
+            class: row.get(22)?,
+            aspect: row.get(23)?,
             materials: Materials {
                 build: row.get(1)?,
                 amber: row.get(2)?,
