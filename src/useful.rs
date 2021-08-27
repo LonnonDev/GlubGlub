@@ -30,6 +30,7 @@ pub const GRIST_TYPES: (&'static str, &'static str, &'static str, &'static str, 
 
 const DATABASE_PATH: &str = "./database.db";
 
+#[derive(Debug, Clone)]
 pub struct Player {
     pub id: i64,
     pub sprite: String,
@@ -38,6 +39,7 @@ pub struct Player {
     pub materials: Materials
 }
 
+#[derive(Debug, Clone)]
 pub struct Materials {
     pub build: i64,
     pub amber: i64,
