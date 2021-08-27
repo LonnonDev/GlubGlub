@@ -20,8 +20,8 @@ async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
-#[aliases("bal")]
-async fn balance(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+#[aliases("info")]
+async fn information(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     // Get author id
     let author_id = args.single::<UserId>().unwrap_or(msg.author.id);
     let author = msg.guild_id.unwrap().member(ctx, author_id).await.unwrap().user;
@@ -33,24 +33,24 @@ async fn balance(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
     let result = get_player(*author_id.as_u64());
 
     // Put all of the grist the user has in a string
-    let mut bal_message = String::new();
+    let mut info_message = String::new();
     let mut y = 0;
     for x in result.unwrap().materials {
-        if x != 0 { match bal_message.as_str() {
-            "" => bal_message = format!(":{}: {}", GRIST_TYPES.to_vec()[y], x.to_formatted_string(&Locale::en)),
-            _  => bal_message = format!("{}\n:{}: {}", bal_message, GRIST_TYPES.to_vec()[y], x.to_formatted_string(&Locale::en)),}
+        if x != 0 { match info_message.as_str() {
+            "" => info_message = format!(":{}: {}", GRIST_TYPES.to_vec()[y], x.to_formatted_string(&Locale::en)),
+            _  => info_message = format!("{}\n:{}: {}", info_message, GRIST_TYPES.to_vec()[y], x.to_formatted_string(&Locale::en)),}
         } y += 1;
     }
-    if bal_message.as_str() == "" {
-        bal_message = "You have Nothing...".to_string();
+    if info_message.as_str() == "" {
+        info_message = "You have Nothing...".to_string();
     }
 
     // Random color for embed and send embed
     let randcolor: u32 = thread_rng().gen_range(0x000000..0xFFFFFF);
     if let Err(why) = msg.channel_id.send_message(&ctx.http, |m| {
         m.embed(|e| {
-            e.title(format!("{}'s Balance", author.name).as_str());
-            e.description(format_emojis!("{}", bal_message));
+            e.title(format!("{}'s Player info", author.name).as_str());
+            e.description(format_emojis!("{}", info_message));
             e.color(randcolor);
             e.author(|a| {
                 a.icon_url(author.avatar_url().unwrap());
@@ -132,5 +132,5 @@ async fn craft(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
 #[group]
 #[only_in("guilds")]
-#[commands(ping, balance, game)]
+#[commands(ping, information, game)]
 pub struct Economy;
