@@ -12,6 +12,43 @@ use crate::useful::*;
 
 use crate::format_emojis;
 
+trait InVec: std::cmp::PartialEq + Sized {
+    fn in_vec(self, vector: Vec<Self>) -> bool {
+        vector.contains(&self)
+    }
+}
+
+impl<T> InVec for T 
+where
+    T: std::cmp::PartialEq
+{}
+
+trait ConvertCaseToSnake {
+    fn to_snakecase(&self) -> String;
+}
+
+impl ConvertCaseToSnake for String {
+    fn to_snakecase(&self) -> String {
+        let part1 = &self.to_uppercase()[0..1];
+        let part2 = &self.to_lowercase()[1..self.len()];
+        return format!("{}{}", part1, part2);
+    }
+}
+
+trait VecStrToString<T> {
+    fn vec_to_string(vector: Vec<T>) -> Vec<String>;
+}
+
+impl<T, S> VecStrToString<T> for Vec<S> where T: std::fmt::Display {
+    fn vec_to_string(vector: Vec<T>) -> Vec<String> {
+        let mut return_vector = vec![];
+        for x in 0..vector.len() {
+            return_vector.push(vector[x].to_string());
+        }
+        return return_vector;
+    }
+}
+
 #[command]
 #[aliases("info")]
 async fn information(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
@@ -114,46 +151,30 @@ async fn game(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     Ok(())
 }
 
-trait InVec {
-    fn in_vec(&self, vector: Vec<&str>) -> bool;
-}
 
-impl InVec for str {
-    fn in_vec(&self, vector: Vec<&str>) -> bool {
-        vector.contains(&self)
-    }
-}
 
-trait VecStrToString<T> {
-    fn vec_to_string(vector: Vec<T>) -> Vec<String>;
-}
-
-impl<T, S> VecStrToString<T> for Vec<S> where T: std::fmt::Display {
-    fn vec_to_string(vector: Vec<T>) -> Vec<String> {
-        let mut return_vector = vec![];
-        for x in 0..vector.len() {
-            return_vector.push(vector[x].to_string());
-        }
-        return return_vector;
-    }
-}
-
+// Sets a user classpect
 #[command]
 async fn set_classpect(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let classes = vec!["Bard", "Prince", "Heir", "Page", "Seer", "Maid", "Sylph", "Knight", "Knight", "Witch", "Mage"];
     let aspects = vec!["Space", "Time", "Light", "Void", "Heart", "Mind", "Hope", "Rage", "Life", "Doom", "Breath", "Blood"];
 
     let author_id = *msg.author.id.as_u64();
-    let classpect = vec![args.single::<String>().unwrap(), args.single::<String>().unwrap()];
+    let classpect = vec![args.single::<String>().unwrap(), args.single::<String>().unwrap(), args.single::<String>().unwrap()];
 
-    if classpect[0].in_vec(classes) && classpect[1].in_vec(aspects) {
+    // Make sure it's a valid classpect
+    if classpect[0].to_snakecase().as_str().in_vec(classes.clone()) && classpect[1].to_lowercase() == "of" && classpect[2].to_snakecase().as_str().in_vec(aspects.clone()) {
         let _ = sqlstatement(format!("UPDATE player SET class={:?}, aspect={:?} WHERE id={}", classpect[0], classpect[1], author_id).as_str());
+        sendmessage("Set your classpect successfully", ctx, msg).await;
     } else {
         let randcolor: u32 = thread_rng().gen_range(0x000000..0xFFFFFF);
-        if let Err(why) = msg.channel_id.send_message(&ctx.http, |m| {
+        if let Err(why) = msg.channel_id.send_message(&ctx.http, move |m| {
             m.embed(|e| {
                 e.title("Error");
                 e.description(format_emojis!("Not valid classpect"));
+                e.description("Please provide classpects in the format of [CLASS] of [ASPECT]");
+                e.field("Classes", format!("{:?}", classes), true);
+                e.field("Aspects", format!("{:?}", aspects), true);
                 e.color(randcolor);
                 e.author(|a| {
                     a.icon_url(msg.author.avatar_url().unwrap());
