@@ -28,7 +28,7 @@ async fn soul_flame(
 }
 
 #[command]
-async fn info(ctx: &Context, msg: &Message) -> CommandResult {
+async fn bot_info(ctx: &Context, msg: &Message) -> CommandResult {
     
     let randcolor: u32 = thread_rng().gen_range(0x000000..0xFFFFFF);
     if let Err(why) = msg.channel_id.send_message(&ctx.http, |m| {
@@ -70,5 +70,5 @@ async fn call(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
 #[group]
 #[only_in("guilds")]
-#[commands(info, call)]
+#[commands(call, bot_info)]
 pub struct General;
