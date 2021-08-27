@@ -43,13 +43,15 @@ async fn information(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
     if let Err(why) = msg.channel_id.send_message(&ctx.http, |m| {
         m.embed(|e| {
             e.title(format!("{}'s Player info", author.name).as_str());
-            e.description(format_emojis!("Classpect: {} of {},\n{}", player.class, player.aspect, info_message));
             e.color(randcolor);
             e.author(|a| {
                 a.icon_url(author.avatar_url().unwrap());
                 a.name(author.name.as_str());
                 a
-            });e
+            });
+            e.field("Classpect", format_emojis!("{} of {} :{}:", player.class, player.aspect, player.aspect.to_lowercase()), false);
+            e.field("Grist", format_emojis!("{}", info_message), true);
+            e
         });m
     }).await {
         sendmessage(format!("Error {}", why).as_str(), ctx, msg).await;
