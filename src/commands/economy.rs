@@ -23,12 +23,12 @@ async fn information(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
     let _ = check_if_registered(*author_id.as_u64());
 
     // Get the players grist
-    let result = get_player(*author_id.as_u64());
+    let player = get_player(*author_id.as_u64()).unwrap();
 
     // Put all of the grist the user has in a string
     let mut info_message = String::new();
     let mut y = 0;
-    for x in result.unwrap().materials {
+    for x in player.clone().materials {
         if x != 0 { match info_message.as_str() {
             "" => info_message = format!(":{}: {}", GRIST_TYPES.to_vec()[y], x.to_formatted_string(&Locale::en)),
             _  => info_message = format!("{}\n:{}: {}", info_message, GRIST_TYPES.to_vec()[y], x.to_formatted_string(&Locale::en)),}
@@ -43,7 +43,7 @@ async fn information(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
     if let Err(why) = msg.channel_id.send_message(&ctx.http, |m| {
         m.embed(|e| {
             e.title(format!("{}'s Player info", author.name).as_str());
-            e.description(format_emojis!("{}", info_message));
+            e.description(format_emojis!("Classpect: {} of {},\n{}", player.class, player.aspect, info_message));
             e.color(randcolor);
             e.author(|a| {
                 a.icon_url(author.avatar_url().unwrap());
