@@ -22,7 +22,19 @@ macro_rules! format_emojis {
             .replace(":sulfur:", "<:sulfur:878027836278063174>")
             .replace(":tar:", "<:tar:878027836504559626>")
             .replace(":uranium:", "<:uranium:878027836269674537>")
-            .replace(":zillion:", "<:zillion:878027836093521942>");
+            .replace(":zillion:", "<:zillion:878027836093521942>")
+            .replace(":space:", "<:space:880724667235708959> ")
+            .replace(":time:", "<:time:880724667692896306>")
+            .replace(":mind:", "<:mind:880724667235708960> ")
+            .replace(":heart:", "<:heart:880724667197956098>")
+            .replace(":hope:", "<:hope:880724667579637790>")
+            .replace(":rage:", "<:rage:880725152973869096>")
+            .replace(":breath:", "<:breath:880724667629973504>")
+            .replace(":blood:", "<:blood:880724667588018226>")
+            .replace(":life:", "<:life:880724667588026378>")
+            .replace(":doom:", "<:doom:880724667609002014>")
+            .replace(":light:", "<:light:880724667269283853>")
+            .replace(":void:", "<:void:880724667621601290>");
         new
     }}
 }
