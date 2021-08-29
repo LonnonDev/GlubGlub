@@ -88,6 +88,7 @@ async fn information(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
             });
             e.field("Classpect", format_emojis!("{} of {} :{}:", player.class, player.aspect, player.aspect.to_lowercase()), false);
             e.field("Grist", format_emojis!("{}", info_message), true);
+            e.field("Inventory", format!(""), true);
             e
         });m
     }).await {
