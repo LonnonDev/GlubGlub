@@ -5,7 +5,7 @@ use tokio_postgres::{Error, NoTls};
 
 use crate::format_emojis;
 
-const POSTGRE: &'static str = "host=192.168.1.119 user=postgres";
+const POSTGRE: &'static str = "host=192.168.1.146 user=postgres";
 
 pub const GRIST_TYPES: (&'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str) = (
     "build",
