@@ -57,10 +57,10 @@ async fn information(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
     let author = msg.guild_id.unwrap().member(ctx, author_id).await.unwrap().user;
 
     // Registers the user if they don't exist
-    let _ = check_if_registered(*author_id.as_u64());
+    let _ = check_if_registered(*author_id.as_u64()).await?;
 
     // Get the players grist
-    let player = get_player(*author_id.as_u64()).unwrap();
+    let player = get_player(*author_id.as_u64()).await.unwrap();
 
     // Put all of the grist the user has in a string
     let mut info_message = String::new();
@@ -105,7 +105,7 @@ async fn game(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let author = msg.guild_id.unwrap().member(ctx, author_id).await.unwrap().user;
 
     // Registers the user if they don't exist
-    let _ = check_if_registered(*author_id.as_u64());
+    let _ = check_if_registered(*author_id.as_u64()).await.unwrap();
 
     // Random message for the embed
     let randnum: u8 = thread_rng().gen_range(0..=2);
@@ -120,12 +120,12 @@ async fn game(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let random_grist: i64 = thread_rng().gen_range(1..30);
 
     // Get the player
-    let result = get_player(*author_id.as_u64());
+    let result = get_player(*author_id.as_u64()).await;
     let player = result.unwrap();
 
     // Get the new grist value, and update the player
     let newvalue = random_grist + player.materials.build;
-    let _ = sqlstatement(format!("UPDATE player SET build={} WHERE id={}", newvalue, author.id.as_u64()).as_str());
+    let _ = sqlstatement(format!("UPDATE player SET build={} WHERE \"id\"={}", newvalue, author.id.as_u64()).as_str()).await?;
 
     // Send exile quote
     get_exile_quote(ctx, msg).await;
@@ -156,6 +156,8 @@ async fn game(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 // Sets a user classpect
 #[command]
 async fn set_classpect(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    check_if_registered(*msg.author.id.as_u64()).await?;
+
     let classes = vec!["Bard", "Prince", "Heir", "Page", "Seer", "Maid", "Sylph", "Knight", "Knight", "Witch", "Mage"];
     let aspects = vec!["Space", "Time", "Light", "Void", "Heart", "Mind", "Hope", "Rage", "Life", "Doom", "Breath", "Blood"];
 
@@ -164,7 +166,7 @@ async fn set_classpect(ctx: &Context, msg: &Message, mut args: Args) -> CommandR
 
     // Make sure it's a valid classpect
     if classpect[0].to_snakecase().as_str().in_vec(classes.clone()) && classpect[1].to_lowercase() == "of" && classpect[2].to_snakecase().as_str().in_vec(aspects.clone()) {
-        let _ = sqlstatement(format!("UPDATE player SET class={:?}, aspect={:?} WHERE id={}", classpect[0], classpect[1], author_id).as_str());
+        let _ = sqlstatement(format!("UPDATE player SET \"class\"='{}', aspect='{}' WHERE \"id\"={}", classpect[0].to_snakecase(), classpect[2].to_snakecase(), author_id).as_str()).await?;
         sendmessage("Set your classpect successfully", ctx, msg).await;
     } else {
         let randcolor: u32 = thread_rng().gen_range(0x000000..0xFFFFFF);
