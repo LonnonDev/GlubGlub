@@ -1,9 +1,11 @@
 use rand::{Rng, thread_rng};
 use serenity::client::Context;
 use serenity::model::channel::Message;
-use rusqlite::{Connection, Result, params};
+use tokio_postgres::{Error, NoTls};
 
 use crate::format_emojis;
+
+const POSTGRE: &'static str = "host=127.0.0.1 user=postgres";
 
 pub const GRIST_TYPES: (&'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str) = (
     "build",
@@ -27,8 +29,6 @@ pub const GRIST_TYPES: (&'static str, &'static str, &'static str, &'static str, 
     "uranium",
     "zillium"
 );
-
-const DATABASE_PATH: &str = "./database.db";
 
 #[derive(Debug, Clone)]
 pub struct Player {
@@ -149,78 +149,84 @@ pub async fn sendmessage(message: &str, ctx: &Context, msg: &Message) {
 }
 
 // Executes a sql statement
-pub fn sqlstatement(statement: &str) -> Result<()> {
-    let conn = Connection::open(DATABASE_PATH)?;
-    let addplayer = conn.execute(statement, params![]);
-    if let Err(err) = conn.close() {println!("{}", err.1);}
-    if let Err(err) = addplayer {println!("{}", err)}
+pub async fn sqlstatement(statement: &str) -> Result<(), Error> {
+    let (client, connection) = tokio_postgres::connect(POSTGRE, NoTls).await.unwrap();
+        tokio::spawn(async move {
+            if let Err(e) = connection.await {
+                eprintln!("connection error: {}", e);
+            }
+        });
+    let _ = client.execute(statement, &[]).await?;
     Ok(())
 }
 
 // Checks if the user has an entry in the DB
-pub fn check_if_registered(id: u64) -> Result<()> {
+pub async fn check_if_registered(id: u64) -> Result<(), Error> {
     // Get player
-    let result = get_player(id);
+    let result = get_player(id).await;
     let player = result.unwrap_or(Player::empty());
     
     // if player.id is 0 then they don't have an entry
     // so then create an entry
     if player.id == 0 {
-        let conn = Connection::open(DATABASE_PATH)?;
-        let addplayer = conn.execute("
-        INSERT INTO player (id) VALUES (?)", params![id]);
-        if let Err(err) = conn.close() {println!("{}", err.1);}
-        if let Err(err) = addplayer {println!("{}", err)}
+        let (client, connection) = tokio_postgres::connect(POSTGRE, NoTls).await.unwrap();
+        tokio::spawn(async move {
+            if let Err(e) = connection.await {
+                eprintln!("connection error: {}", e);
+            }
+        });
+        let _ = client.execute("INSERT INTO player 
+        (\"id\", amber, amethyst, artifact, caulk, chalk, cobalt, diamond, garnet, gold, iodine, marble, 
+        marcury, quartz, ruby, rust, shale, sulfur, tar, uranium, sprite, \"class\", aspect) 
+        VALUES ($1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+            0, 0, 0, 0, 0, 0, 0, 'Empty', 'Bard', 'Light');", &[&(id as i64)]).await.unwrap();
     }
-
     Ok(())
 }
 
 // SQLite search statement
-pub fn get_player(author_id: u64) -> Result<Player> {
-    let conn = Connection::open(DATABASE_PATH)?;
-    let mut stmt = conn.prepare(
-        format!("SELECT * FROM player WHERE id={}", author_id).as_str(),
-    )?;
-    
+pub async fn get_player(author_id: u64) -> Result<Player, Error> {
+    let (client, connection) = tokio_postgres::connect(POSTGRE, NoTls).await?;
+    tokio::spawn(async move {
+        if let Err(e) = connection.await {
+            eprintln!("connection error: {}", e);
+        }
+    });
+    let mut player = Player::empty();
+
     // Create Player struct
-    let player_iter = stmt.query_map([], |row| {
-        Ok(Player {
-            id: row.get(0)?,
-            sprite: row.get(21)?,
-            class: row.get(22)?,
-            aspect: row.get(23)?,
+    for row in client.query("SELECT * FROM player WHERE \"id\"=$1",&[&(author_id as i64)]).await? {
+        player = Player {
+            id: row.get(0),
+            sprite: row.get(21),
+            class: row.get(22),
+            aspect: row.get(23),
             materials: Materials {
-                build: row.get(1)?,
-                amber: row.get(2)?,
-                amethyst: row.get(3)?,
-                caulk: row.get(4)?,
-                chalk: row.get(5)?,
-                cobalt: row.get(6)?,
-                diamond: row.get(7)?,
-                garnet: row.get(8)?,
-                gold: row.get(9)?,
-                iodine: row.get(10)?,
-                marble: row.get(11)?,
-                mercury: row.get(12)?,
-                quartz: row.get(13)?,
-                ruby: row.get(14)?,
-                rust: row.get(15)?,
-                shale: row.get(16)?,
-                sulfur: row.get(17)?,
-                tar: row.get(18)?,
-                uranium: row.get(19)?,
-                zillium: row.get(20)?,
+                build: row.get(1),
+                amber: row.get(2),
+                amethyst: row.get(3),
+                caulk: row.get(4),
+                chalk: row.get(5),
+                cobalt: row.get(6),
+                diamond: row.get(7),
+                garnet: row.get(8),
+                gold: row.get(9),
+                iodine: row.get(10),
+                marble: row.get(11),
+                mercury: row.get(12),
+                quartz: row.get(13),
+                ruby: row.get(14),
+                rust: row.get(15),
+                shale: row.get(16),
+                sulfur: row.get(17),
+                tar: row.get(18),
+                uranium: row.get(19),
+                zillium: row.get(20),
             }
-        })
-    })?;
-    let mut return_value = Player::empty();
-    for player in player_iter {
-        return_value = player.unwrap();
+        }
     }
 
-
-    return Ok(return_value)
+    return Ok(player)
 }
 
 
