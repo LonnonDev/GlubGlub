@@ -176,7 +176,7 @@ pub async fn check_if_registered(id: u64) -> Result<(), Error> {
             }
         });
         let _ = client.execute("INSERT INTO player 
-        (\"id\", amber, amethyst, artifact, caulk, chalk, cobalt, diamond, garnet, gold, iodine, marble, 
+        (\"id\", amber, amethyst, caulk, chalk, cobalt, diamond, garnet, gold, iodine, marble, 
         marcury, quartz, ruby, rust, shale, sulfur, tar, uranium, sprite, \"class\", aspect) 
         VALUES ($1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
             0, 0, 0, 0, 0, 0, 0, 'Empty', 'Bard', 'Light');", &[&(id as i64)]).await.unwrap();
