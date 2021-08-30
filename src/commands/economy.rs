@@ -59,11 +59,31 @@ impl<T> FormatVec for Vec<T> where T: std::fmt::Display {
         for x in self {
             return_string = format!("{}\n{}", return_string, x);
         }
-        return return_string
+        println!("{:?}", return_string);
+        if return_string.replace("\n", "") == "" {
+            return "Empty".to_owned()
+        } else {
+            return return_string
+        }
     }
 }
 
+#[command]
+async fn use_sylladex(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    let action = args.single::<String>().unwrap_or("nothing".to_owned()).to_lowercase();
+    let player = get_player(*msg.author.id.as_u64()).await?;
+    match player.sylladex_type.as_str() {
+        "stack" => match action.as_str() {
+            "push" => (),
+            "pop" => (),
+            "push_storage" => (),
+            _ => sendmessage("Invalid Action\nValid actions are: `push`, `pop`, `push_storage`", ctx, msg).await,
+        },
+        _ => (),
+    }
 
+    Ok(())
+}
 
 #[command]
 #[aliases("info")]
@@ -93,23 +113,21 @@ async fn information(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
 
     // Random color for embed and send embed
     let randcolor: u32 = thread_rng().gen_range(0x000000..0xFFFFFF);
-    if let Err(why) = msg.channel_id.send_message(&ctx.http, |m| {
-        m.embed(|e| {
-            e.title(format!("{}'s Player info", author.name).as_str());
-            e.color(randcolor);
-            e.author(|a| {
-                a.icon_url(author.avatar_url().unwrap());
-                a.name(author.name.as_str());
-                a
-            });
-            e.field("Classpect", format_emojis!("{} of {} :{}:", player.class, player.aspect, player.aspect.to_lowercase()), false);
-            e.field("Grist", format_emojis!("{}", info_message), true);
-            e.field("Inventory", format_items!("{}", player.inventory.format_vec()), true);
-            e
-        });m
-    }).await {
-        sendmessage(format!("Error {}", why).as_str(), ctx, msg).await;
-    }
+    send_embed(ctx, msg, |e| {
+        e.title(format!("{}'s Player info", author.name).as_str());
+        e.color(randcolor);
+        e.author(|a| {
+            a.icon_url(author.avatar_url().unwrap());
+            a.name(author.name.as_str());
+            a
+        });
+        e.field("Classpect", format_emojis!("{} of {} :{}:", player.class, player.aspect, player.aspect.to_lowercase()), false);
+        e.field("Grist", format_emojis!("{}", info_message), false);
+        e.field("Inventory", format_items!("{}", player.inventory.format_vec()), false);
+        e.field("Storage", format_items!("{}", player.storage.format_vec()), false);
+        e.field("Sylladex", format!("{}", player.sylladex_type.to_string().to_snakecase()), false);
+        e
+    }).await;
 
     Ok(())
 }
@@ -218,5 +236,5 @@ async fn craft(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
 #[group]
 #[only_in("guilds")]
-#[commands(information, game, set_classpect)]
+#[commands(information, game, set_classpect, use_sylladex)]
 pub struct Economy;

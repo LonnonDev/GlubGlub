@@ -1,4 +1,5 @@
 use rand::{Rng, thread_rng};
+use serenity::builder::CreateEmbed;
 use serenity::client::Context;
 use serenity::model::channel::Message;
 use tokio_postgres::{Error, NoTls};
@@ -154,6 +155,19 @@ pub async fn sendmessage(message: &str, ctx: &Context, msg: &Message) {
     }
 }
 
+// Send embed
+pub async fn send_embed<F>(ctx: &Context, msg: &Message, closure: F) 
+    where
+        F: FnOnce(&mut CreateEmbed) -> &mut CreateEmbed,
+    {
+    if let Err(why) = msg.channel_id.send_message(&ctx, |m| {
+        m.embed(closure);
+        m
+    }).await {
+        sendmessage(format!("Error {}", why).as_str(), ctx, msg).await;
+    }
+}
+
 // Executes a sql statement
 pub async fn sqlstatement(statement: &str) -> Result<(), Error> {
     let (client, connection) = tokio_postgres::connect(POSTGRE, NoTls).await.unwrap();
@@ -236,7 +250,6 @@ pub async fn get_player(author_id: u64) -> Result<Player, Error> {
 
     return Ok(player)
 }
-
 
 // Gets exile quote
 pub async fn get_exile_quote(ctx: &Context, msg: &Message) {
