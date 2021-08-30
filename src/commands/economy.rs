@@ -252,4 +252,4 @@ async fn craft(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 #[group]
 #[only_in("guilds")]
 #[commands(information, game, set_classpect, use_sylladex)]
-pub struct Economy;
+pub struct Game;
