@@ -38,6 +38,8 @@ pub struct Player {
     pub aspect: String,
     pub materials: Materials,
     pub inventory: Vec<String>,
+    pub storage: Vec<String>,
+    pub sylladex_type: String,
 }
 
 #[derive(Debug, Clone)]
@@ -73,7 +75,9 @@ impl Player {
             class: "Bard".to_string(),
             aspect: "Light".to_string(),
             materials: Materials::empty(),
-            inventory: vec!["disc".to_string()]
+            inventory: vec!["disc".to_string()],
+            storage: vec![],
+            sylladex_type: "".to_owned(),
         }
     }
 }
@@ -196,6 +200,7 @@ pub async fn get_player(author_id: u64) -> Result<Player, Error> {
     // Create Player struct
     for row in client.query("SELECT * FROM player WHERE \"id\"=$1",&[&(author_id as i64)]).await? {
         let inventory = row.get::<_, String>(24).split("ˌ").map(str::to_string).collect::<Vec<String>>();
+        let storage = row.get::<_, String>(25).split("ˌ").map(str::to_string).collect::<Vec<String>>();
         player = Player {
             id: row.get(0),
             sprite: row.get(21),
@@ -223,7 +228,9 @@ pub async fn get_player(author_id: u64) -> Result<Player, Error> {
                 uranium: row.get(19),
                 zillium: row.get(20),
             },
-            inventory: inventory
+            inventory,
+            storage,
+            sylladex_type: row.get(26),
         }
     }
 
