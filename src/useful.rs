@@ -1,5 +1,3 @@
-use std::convert::TryInto;
-
 use rand::{Rng, thread_rng};
 use serenity::client::Context;
 use serenity::model::channel::Message;
