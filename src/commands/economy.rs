@@ -18,10 +18,7 @@ trait InVec: std::cmp::PartialEq + Sized {
     }
 }
 
-impl<T> InVec for T 
-where
-    T: std::cmp::PartialEq
-{}
+impl<T> InVec for T where T: std::cmp::PartialEq {}
 
 trait ConvertCaseToSnake {
     fn to_snakecase(&self) -> String;
