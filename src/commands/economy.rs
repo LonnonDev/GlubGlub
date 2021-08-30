@@ -50,15 +50,32 @@ trait FormatVec {
     fn format_vec(&self) -> String;
 }
 
-impl<T> FormatVec for Vec<T> where T: std::fmt::Display {
+impl<T: std::fmt::Display> FormatVec for Vec<T> {
     fn format_vec(&self) -> String {
         let mut return_string = "".to_owned();
         for x in self {
             return_string = format!("{}\n{}", return_string, x);
         }
-        println!("{:?}", return_string);
         if return_string.replace("\n", "") == "" {
             return "Empty".to_owned()
+        } else {
+            return return_string
+        }
+    }
+}
+
+trait ConvertVec {
+    fn convert_vec(&self) -> String;
+}
+
+impl<T: std::fmt::Display> ConvertVec for Vec<T> {
+    fn convert_vec(&self) -> String {
+        let mut return_string = "".to_owned();
+        for x in self {
+            return_string = format!("{}ˌ{}", return_string, x);
+        }
+        if return_string.replace("ˌ", "") == "" {
+            return "".to_owned()
         } else {
             return return_string
         }
