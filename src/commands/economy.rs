@@ -8,7 +8,7 @@ use tuple_conv::RepeatedTuple;
 use rand::thread_rng;
 use rand::Rng;
 use num_format::{Locale, ToFormattedString};
-use crate::useful::*; 
+use crate::{format_items, useful::*}; 
 
 use crate::format_emojis;
 
@@ -49,6 +49,22 @@ impl<T, S> VecStrToString<T> for Vec<S> where T: std::fmt::Display {
     }
 }
 
+trait FormatVec {
+    fn format_vec(&self) -> String;
+}
+
+impl<T> FormatVec for Vec<T> where T: std::fmt::Display {
+    fn format_vec(&self) -> String {
+        let mut return_string = "".to_owned();
+        for x in self {
+            return_string = format!("{}\n{}", return_string, x);
+        }
+        return return_string
+    }
+}
+
+
+
 #[command]
 #[aliases("info")]
 async fn information(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
@@ -88,7 +104,7 @@ async fn information(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
             });
             e.field("Classpect", format_emojis!("{} of {} :{}:", player.class, player.aspect, player.aspect.to_lowercase()), false);
             e.field("Grist", format_emojis!("{}", info_message), true);
-            e.field("Inventory", format!(""), true);
+            e.field("Inventory", format_items!("{}", player.inventory.format_vec()), true);
             e
         });m
     }).await {
