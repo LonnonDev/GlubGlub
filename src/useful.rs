@@ -156,10 +156,7 @@ pub async fn sendmessage(message: &str, ctx: &Context, msg: &Message) {
 }
 
 // Send embed
-pub async fn send_embed<F>(ctx: &Context, msg: &Message, closure: F) 
-    where
-        F: FnOnce(&mut CreateEmbed) -> &mut CreateEmbed,
-    {
+pub async fn send_embed<F>(ctx: &Context, msg: &Message, closure: F)  where F: FnOnce(&mut CreateEmbed) -> &mut CreateEmbed, {
     if let Err(why) = msg.channel_id.send_message(&ctx, |m| {
         m.embed(closure);
         m
