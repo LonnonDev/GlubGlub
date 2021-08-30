@@ -135,8 +135,8 @@ async fn information(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
             a.name(author.name.as_str());
             a
         });
-        e.field("Classpect", format_emojis!("{} of {} :{}:", player.class, player.aspect, player.aspect.to_lowercase()), true);
-        e.field("Grist", format_emojis!("{}", info_message), true);
+        e.field("Classpect", format_emojis!("{} of {} :{}:", player.class, player.aspect, player.aspect.to_lowercase()), false);
+        e.field("Grist", format_emojis!("{}", info_message), false);
         e.field("Inventory", format_items!("{}", player.inventory.format_vec()), true);
         e.field("Storage", format_items!("{}", player.storage.format_vec()), true);
         e.field("Sylladex", format!("{}", player.sylladex_type.to_string().to_snakecase()), true);
