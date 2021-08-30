@@ -86,6 +86,7 @@ impl<T: std::fmt::Display> ConvertVec for Vec<T> {
 async fn use_sylladex(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let action = args.single::<String>().unwrap_or("nothing".to_owned()).to_lowercase();
     let player = get_player(*msg.author.id.as_u64()).await?;
+    // Get player sylladex type and then match their action
     match player.sylladex_type.as_str() {
         "stack" => match action.as_str() {
             "push" => (),
@@ -169,12 +170,12 @@ async fn game(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let random_grist: i64 = thread_rng().gen_range(1..30);
 
     // Get the player
-    let result = get_player(*author_id.as_u64()).await;
+    let result = get_player(*author.id.as_u64()).await;
     let player = result.unwrap();
 
     // Get the new grist value, and update the player
     let newvalue = random_grist + player.materials.build;
-    let _ = sqlstatement(format!("UPDATE player SET build={} WHERE \"id\"={}", newvalue, author.id.as_u64()).as_str()).await?;
+    let _ = update_sqlstatement("build=$1", *author.id.as_u64(), &[&newvalue]).await?;
 
     // Send exile quote
     get_exile_quote(ctx, msg).await;
@@ -215,7 +216,7 @@ async fn set_classpect(ctx: &Context, msg: &Message, mut args: Args) -> CommandR
 
     // Make sure it's a valid classpect
     if classpect[0].to_snakecase().as_str().in_vec(classes.clone()) && classpect[1].to_lowercase() == "of" && classpect[2].to_snakecase().as_str().in_vec(aspects.clone()) {
-        let _ = sqlstatement(format!("UPDATE player SET \"class\"='{}', aspect='{}' WHERE \"id\"={}", classpect[0].to_snakecase(), classpect[2].to_snakecase(), author_id).as_str()).await?;
+        let _ = update_sqlstatement("\"class\"=$1, aspect=$2", author_id, &[&classpect[0].to_snakecase(), &classpect[2].to_snakecase()]).await;
         sendmessage("Set your classpect successfully", ctx, msg).await;
     } else {
         let randcolor: u32 = thread_rng().gen_range(0x000000..0xFFFFFF);

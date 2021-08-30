@@ -2,7 +2,7 @@ use rand::{Rng, thread_rng};
 use serenity::builder::CreateEmbed;
 use serenity::client::Context;
 use serenity::model::channel::Message;
-use tokio_postgres::{Error, NoTls};
+use tokio_postgres::{Error, NoTls, types::ToSql};
 
 use crate::format_emojis;
 
@@ -176,6 +176,19 @@ pub async fn sqlstatement(statement: &str) -> Result<(), Error> {
     let _ = client.execute(statement, &[]).await?;
     Ok(())
 }
+
+// Executes a update sql statement
+pub async fn update_sqlstatement(statement: &str, author_id: u64, params: &[&(dyn ToSql + Sync)],) -> Result<(), Error> {
+    let (client, connection) = tokio_postgres::connect(POSTGRE, NoTls).await.unwrap();
+        tokio::spawn(async move {
+            if let Err(e) = connection.await {
+                eprintln!("connection error: {}", e);
+            }
+        });
+    let _ = client.execute(format!("UPDATE player SET {} WHERE \"id\"={}", statement, author_id).as_str(), params).await?;
+    Ok(())
+}
+
 
 // Checks if the user has an entry in the DB
 pub async fn check_if_registered(id: u64) -> Result<(), Error> {
