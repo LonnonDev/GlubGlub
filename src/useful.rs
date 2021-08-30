@@ -1,3 +1,5 @@
+use std::convert::TryInto;
+
 use rand::{Rng, thread_rng};
 use serenity::client::Context;
 use serenity::model::channel::Message;
@@ -36,7 +38,8 @@ pub struct Player {
     pub sprite: String,
     pub class: String,
     pub aspect: String,
-    pub materials: Materials
+    pub materials: Materials,
+    pub inventory: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -71,7 +74,8 @@ impl Player {
             sprite: "Empty".to_string(),
             class: "Bard".to_string(),
             aspect: "Light".to_string(),
-            materials: Materials::empty()
+            materials: Materials::empty(),
+            inventory: vec!["disc".to_string()]
         }
     }
 }
@@ -193,6 +197,7 @@ pub async fn get_player(author_id: u64) -> Result<Player, Error> {
 
     // Create Player struct
     for row in client.query("SELECT * FROM player WHERE \"id\"=$1",&[&(author_id as i64)]).await? {
+        let inventory = row.get::<_, String>(24).split("ˌ").map(str::to_string).collect::<Vec<String>>();
         player = Player {
             id: row.get(0),
             sprite: row.get(21),
@@ -219,7 +224,8 @@ pub async fn get_player(author_id: u64) -> Result<Player, Error> {
                 tar: row.get(18),
                 uranium: row.get(19),
                 zillium: row.get(20),
-            }
+            },
+            inventory: inventory
         }
     }
 
