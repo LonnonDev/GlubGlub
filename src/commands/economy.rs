@@ -8,45 +8,57 @@ use tuple_conv::RepeatedTuple;
 use rand::thread_rng;
 use rand::Rng;
 use num_format::{Locale, ToFormattedString};
-use crate::useful::*; 
+use crate::{format_items, useful::*}; 
 
 use crate::format_emojis;
 
-trait InVec: std::cmp::PartialEq + Sized {
-    fn in_vec(self, vector: Vec<Self>) -> bool {
-        vector.contains(&self)
+
+// TODO
+#[command]
+async fn use_sylladex(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    let action = args.single::<String>().unwrap_or("nothing".to_owned()).to_lowercase();
+    let _index = args.single::<u64>().unwrap_or(0);
+    let mut player = get_player(*msg.author.id.as_u64()).await?;
+    // Get player sylladex type and then match their action
+    match player.sylladex_type.as_str() {
+        // Stack modus
+        "stack" => match action.as_str() {
+            "push" => {
+                let tmp = player.storage.pop().unwrap();
+                let storage = player.storage.convert_vec();
+                player.inventory.push(tmp.clone());
+                let inventory = player.inventory.convert_vec();
+                update_sqlstatement("inventory=$1, storage=$2", *msg.author.id.as_u64(), &[&inventory, &storage]).await.unwrap();
+                sendmessage(format_items!("Pushed `{}` onto the Stack", tmp).as_str(), ctx, msg).await;
+            },
+            "pop" => {
+                let tmp = player.inventory.pop().unwrap();
+                let inventory = player.inventory.convert_vec();
+                player.storage.push(tmp.clone());
+                let storage = player.storage.convert_vec();
+                update_sqlstatement("inventory=$1, storage=$2", *msg.author.id.as_u64(), &[&inventory, &storage]).await.unwrap();
+                sendmessage(format_items!("Pop `{}` into Storage", tmp).as_str(), ctx, msg).await;
+            },
+            "pop_trash" => {
+                let tmp = player.inventory.pop().unwrap();
+                if tmp == "disk" {
+                    sendmessage("You can not trash the Sburb Disk", ctx, msg).await;
+                } else {
+                    let inventory = player.inventory.convert_vec();
+                    update_sqlstatement("inventory=$1", *msg.author.id.as_u64(), &[&inventory]).await.unwrap();
+                    sendmessage(format_items!("Trashed `{}`", tmp).as_str(), ctx, msg).await;
+                }
+            }
+            _ => sendmessage("Invalid Action\nValid actions are: `push`, `pop`, `pop_trash`", ctx, msg).await,
+        },
+        // Queue modus
+        "queue" => match action.as_str() {
+            _ => sendmessage("Invalid Action\nValid actions are: `push_from_storage`, `pop`, `pop_storage`, `pop_to_storage`", ctx, msg).await,
+        },
+        _ => (),
     }
-}
 
-impl<T> InVec for T 
-where
-    T: std::cmp::PartialEq
-{}
-
-trait ConvertCaseToSnake {
-    fn to_snakecase(&self) -> String;
-}
-
-impl ConvertCaseToSnake for String {
-    fn to_snakecase(&self) -> String {
-        let part1 = &self.to_uppercase()[0..1];
-        let part2 = &self.to_lowercase()[1..self.len()];
-        return format!("{}{}", part1, part2);
-    }
-}
-
-trait VecStrToString<T> {
-    fn vec_to_string(vector: Vec<T>) -> Vec<String>;
-}
-
-impl<T, S> VecStrToString<T> for Vec<S> where T: std::fmt::Display {
-    fn vec_to_string(vector: Vec<T>) -> Vec<String> {
-        let mut return_vector = vec![];
-        for x in 0..vector.len() {
-            return_vector.push(vector[x].to_string());
-        }
-        return return_vector;
-    }
+    Ok(())
 }
 
 #[command]
@@ -77,22 +89,21 @@ async fn information(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
 
     // Random color for embed and send embed
     let randcolor: u32 = thread_rng().gen_range(0x000000..0xFFFFFF);
-    if let Err(why) = msg.channel_id.send_message(&ctx.http, |m| {
-        m.embed(|e| {
-            e.title(format!("{}'s Player info", author.name).as_str());
-            e.color(randcolor);
-            e.author(|a| {
-                a.icon_url(author.avatar_url().unwrap());
-                a.name(author.name.as_str());
-                a
-            });
-            e.field("Classpect", format_emojis!("{} of {} :{}:", player.class, player.aspect, player.aspect.to_lowercase()), false);
-            e.field("Grist", format_emojis!("{}", info_message), true);
-            e
-        });m
-    }).await {
-        sendmessage(format!("Error {}", why).as_str(), ctx, msg).await;
-    }
+    send_embed(ctx, msg, |e| {
+        e.title(format!("{}'s Player info", author.name).as_str());
+        e.color(randcolor);
+        e.author(|a| {
+            a.icon_url(author.avatar_url().unwrap());
+            a.name(author.name.as_str());
+            a
+        });
+        e.field("Classpect", format_emojis!("{} of {} :{}:", player.class, player.aspect, player.aspect.to_lowercase()), false);
+        e.field("Grist", format_emojis!("{}", info_message), false);
+        e.field("Sylladex", format_items!("```{}```", player.inventory.format_vec()), true);
+        e.field("Storage", format_items!("```{}```", player.storage.format_vec()), true);
+        e.field("Sylladex Modus", format!("{}", player.sylladex_type.to_snakecase()), true);
+        e
+    }).await;
 
     Ok(())
 }
@@ -120,12 +131,12 @@ async fn game(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let random_grist: i64 = thread_rng().gen_range(1..30);
 
     // Get the player
-    let result = get_player(*author_id.as_u64()).await;
+    let result = get_player(*author.id.as_u64()).await;
     let player = result.unwrap();
 
     // Get the new grist value, and update the player
     let newvalue = random_grist + player.materials.build;
-    let _ = sqlstatement(format!("UPDATE player SET build={} WHERE \"id\"={}", newvalue, author.id.as_u64()).as_str()).await?;
+    let _ = update_sqlstatement("build=$1", *author.id.as_u64(), &[&newvalue]).await?;
 
     // Send exile quote
     get_exile_quote(ctx, msg).await;
@@ -166,7 +177,7 @@ async fn set_classpect(ctx: &Context, msg: &Message, mut args: Args) -> CommandR
 
     // Make sure it's a valid classpect
     if classpect[0].to_snakecase().as_str().in_vec(classes.clone()) && classpect[1].to_lowercase() == "of" && classpect[2].to_snakecase().as_str().in_vec(aspects.clone()) {
-        let _ = sqlstatement(format!("UPDATE player SET \"class\"='{}', aspect='{}' WHERE \"id\"={}", classpect[0].to_snakecase(), classpect[2].to_snakecase(), author_id).as_str()).await?;
+        let _ = update_sqlstatement("\"class\"=$1, aspect=$2", author_id, &[&classpect[0].to_snakecase(), &classpect[2].to_snakecase()]).await;
         sendmessage("Set your classpect successfully", ctx, msg).await;
     } else {
         let randcolor: u32 = thread_rng().gen_range(0x000000..0xFFFFFF);
@@ -201,5 +212,5 @@ async fn craft(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
 #[group]
 #[only_in("guilds")]
-#[commands(information, game, set_classpect)]
-pub struct Economy;
+#[commands(information, game, set_classpect, use_sylladex)]
+pub struct Game;

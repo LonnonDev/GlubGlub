@@ -38,3 +38,23 @@ macro_rules! format_emojis {
         new
     }}
 }
+
+#[macro_export]
+macro_rules! format_items {
+    ($($arg:tt)*) => {{
+        let mut res = std::fmt::format(format_args!($($arg)*));
+        res = res.replace("disk", "Sburb Disk");
+        res
+    }}
+}
+
+
+#[macro_export]
+macro_rules! format_all {
+    ($($arg:tt)*) => {{
+        let mut res = std::fmt::format(format_args!($($arg)*));
+        res = format_emojis!("{}", res);
+        res = format_items!("{}", res); 
+        res
+    }}
+}

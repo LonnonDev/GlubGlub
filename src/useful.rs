@@ -1,34 +1,14 @@
 use rand::{Rng, thread_rng};
+use serenity::builder::CreateEmbed;
 use serenity::client::Context;
 use serenity::model::channel::Message;
-use tokio_postgres::{Error, NoTls};
+use tokio_postgres::{Error, NoTls, types::ToSql};
 
 use crate::format_emojis;
 
 const POSTGRE: &'static str = "host=192.168.1.146 user=postgres";
 
-pub const GRIST_TYPES: (&'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str) = (
-    "build",
-    "amber",
-    "amethyst",
-    "caulk",
-    "chalk",
-    "cobalt",
-    "diamond",
-    "garnet",
-    "gold",
-    "iodine",
-    "marble",
-    "mercury",
-    "quartz",
-    "ruby",
-    "rust",
-    "shale",
-    "sulfur",
-    "tar",
-    "uranium",
-    "zillium"
-);
+pub const GRIST_TYPES: (&'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str) = ("build","amber","amethyst","caulk","chalk","cobalt","diamond","garnet","gold","iodine","marble","mercury","quartz","ruby","rust","shale","sulfur","tar","uranium","zillium");
 
 #[derive(Debug, Clone)]
 pub struct Player {
@@ -36,7 +16,10 @@ pub struct Player {
     pub sprite: String,
     pub class: String,
     pub aspect: String,
-    pub materials: Materials
+    pub materials: Materials,
+    pub inventory: Vec<String>,
+    pub storage: Vec<String>,
+    pub sylladex_type: String,
 }
 
 #[derive(Debug, Clone)]
@@ -71,7 +54,10 @@ impl Player {
             sprite: "Empty".to_string(),
             class: "Bard".to_string(),
             aspect: "Light".to_string(),
-            materials: Materials::empty()
+            materials: Materials::empty(),
+            inventory: vec!["disc".to_string()],
+            storage: vec![],
+            sylladex_type: "".to_owned(),
         }
     }
 }
@@ -148,6 +134,16 @@ pub async fn sendmessage(message: &str, ctx: &Context, msg: &Message) {
     }
 }
 
+// Send embed
+pub async fn send_embed<F>(ctx: &Context, msg: &Message, closure: F)  where F: FnOnce(&mut CreateEmbed) -> &mut CreateEmbed, {
+    if let Err(why) = msg.channel_id.send_message(&ctx, |m| {
+        m.embed(closure);
+        m
+    }).await {
+        sendmessage(format!("Error {}", why).as_str(), ctx, msg).await;
+    }
+}
+
 // Executes a sql statement
 pub async fn sqlstatement(statement: &str) -> Result<(), Error> {
     let (client, connection) = tokio_postgres::connect(POSTGRE, NoTls).await.unwrap();
@@ -159,6 +155,19 @@ pub async fn sqlstatement(statement: &str) -> Result<(), Error> {
     let _ = client.execute(statement, &[]).await?;
     Ok(())
 }
+
+// Executes a update sql statement
+pub async fn update_sqlstatement(statement: &str, author_id: u64, params: &[&(dyn ToSql + Sync)],) -> Result<(), Error> {
+    let (client, connection) = tokio_postgres::connect(POSTGRE, NoTls).await.unwrap();
+        tokio::spawn(async move {
+            if let Err(e) = connection.await {
+                eprintln!("connection error: {}", e);
+            }
+        });
+    let _ = client.execute(format!("UPDATE player SET {} WHERE \"id\"={}", statement, author_id).as_str(), params).await?;
+    Ok(())
+}
+
 
 // Checks if the user has an entry in the DB
 pub async fn check_if_registered(id: u64) -> Result<(), Error> {
@@ -193,6 +202,8 @@ pub async fn get_player(author_id: u64) -> Result<Player, Error> {
 
     // Create Player struct
     for row in client.query("SELECT * FROM player WHERE \"id\"=$1",&[&(author_id as i64)]).await? {
+        let inventory = row.get::<_, String>(24).split("ˌ").map(str::to_string).collect::<Vec<String>>();
+        let storage = row.get::<_, String>(25).split("ˌ").map(str::to_string).collect::<Vec<String>>();
         player = Player {
             id: row.get(0),
             sprite: row.get(21),
@@ -219,13 +230,15 @@ pub async fn get_player(author_id: u64) -> Result<Player, Error> {
                 tar: row.get(18),
                 uranium: row.get(19),
                 zillium: row.get(20),
-            }
+            },
+            inventory,
+            storage,
+            sylladex_type: row.get(26),
         }
     }
 
     return Ok(player)
 }
-
 
 // Gets exile quote
 pub async fn get_exile_quote(ctx: &Context, msg: &Message) {
@@ -267,5 +280,76 @@ pub async fn get_exile_quote(ctx: &Context, msg: &Message) {
         send_embed(ctx, msg, exile_3[rand_index as usize]).await;
     } else if author_exile == 4 {
         send_embed(ctx, msg, exile_4[rand_index as usize]).await;
+    }
+}
+
+pub trait InVec: std::cmp::PartialEq + Sized {
+    fn in_vec(self, vector: Vec<Self>) -> bool {
+        vector.contains(&self)
+    }
+}
+
+impl<T> InVec for T where T: std::cmp::PartialEq {}
+
+pub trait ConvertCaseToSnake {
+    fn to_snakecase(&self) -> String;
+}
+
+impl ConvertCaseToSnake for String {
+    fn to_snakecase(&self) -> String {
+        let part1 = &self.to_uppercase()[0..1];
+        let part2 = &self.to_lowercase()[1..self.len()];
+        return format!("{}{}", part1, part2);
+    }
+}
+
+pub trait VecStrToString {
+    fn vec_to_string(self) -> Vec<String>;
+}
+
+impl<T: std::fmt::Display> VecStrToString for Vec<T> {
+    fn vec_to_string(self) -> Vec<String> {
+        let mut return_vector = vec![];
+        for x in 0..self.len() {
+            return_vector.push(self[x].to_string());
+        }
+        return return_vector;
+    }
+}
+
+pub trait FormatVec {
+    fn format_vec(&self) -> String;
+}
+
+impl<T: std::fmt::Display> FormatVec for Vec<T> {
+    fn format_vec(&self) -> String {
+        let new_vec = self.into_iter().rev().collect::<Vec<_>>();
+        let mut return_string = "".to_owned();
+        for x in new_vec {
+            return_string = format!("{}\n{}", return_string, x);
+        }
+        if return_string.replace("\n", "") == "" {
+            return "Empty".to_owned()
+        } else {
+            return return_string
+        }
+    }
+}
+
+pub trait ConvertVec {
+    fn convert_vec(&self) -> String;
+}
+
+impl<T: std::fmt::Display> ConvertVec for Vec<T> {
+    fn convert_vec(&self) -> String {
+        let mut return_string = "".to_owned();
+        for x in self {
+            return_string = format!("{}ˌ{}", return_string, x);
+        }
+        if return_string.replace("ˌ", "") == "" {
+            return "".to_owned();
+        } else {
+            return return_string;
+        }
     }
 }

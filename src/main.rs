@@ -112,7 +112,7 @@ async fn main() {
             c
         })
         .help(&MY_HELP)
-        .group(&ECONOMY_GROUP)
+        .group(&GAME_GROUP)
         .group(&OWNER_GROUP)
         .group(&GENERAL_GROUP)
         .bucket("basic", |b| b.delay(5).time_span(30).limit(1))
