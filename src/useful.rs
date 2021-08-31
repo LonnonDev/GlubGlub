@@ -8,28 +8,7 @@ use crate::format_emojis;
 
 const POSTGRE: &'static str = "host=192.168.1.146 user=postgres";
 
-pub const GRIST_TYPES: (&'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str) = (
-    "build",
-    "amber",
-    "amethyst",
-    "caulk",
-    "chalk",
-    "cobalt",
-    "diamond",
-    "garnet",
-    "gold",
-    "iodine",
-    "marble",
-    "mercury",
-    "quartz",
-    "ruby",
-    "rust",
-    "shale",
-    "sulfur",
-    "tar",
-    "uranium",
-    "zillium"
-);
+pub const GRIST_TYPES: (&'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str, &'static str) = ("build","amber","amethyst","caulk","chalk","cobalt","diamond","garnet","gold","iodine","marble","mercury","quartz","ruby","rust","shale","sulfur","tar","uranium","zillium");
 
 #[derive(Debug, Clone)]
 pub struct Player {
@@ -301,5 +280,76 @@ pub async fn get_exile_quote(ctx: &Context, msg: &Message) {
         send_embed(ctx, msg, exile_3[rand_index as usize]).await;
     } else if author_exile == 4 {
         send_embed(ctx, msg, exile_4[rand_index as usize]).await;
+    }
+}
+
+pub trait InVec: std::cmp::PartialEq + Sized {
+    fn in_vec(self, vector: Vec<Self>) -> bool {
+        vector.contains(&self)
+    }
+}
+
+impl<T> InVec for T where T: std::cmp::PartialEq {}
+
+pub trait ConvertCaseToSnake {
+    fn to_snakecase(&self) -> String;
+}
+
+impl ConvertCaseToSnake for String {
+    fn to_snakecase(&self) -> String {
+        let part1 = &self.to_uppercase()[0..1];
+        let part2 = &self.to_lowercase()[1..self.len()];
+        return format!("{}{}", part1, part2);
+    }
+}
+
+pub trait VecStrToString {
+    fn vec_to_string(self) -> Vec<String>;
+}
+
+impl<T: std::fmt::Display> VecStrToString for Vec<T> {
+    fn vec_to_string(self) -> Vec<String> {
+        let mut return_vector = vec![];
+        for x in 0..self.len() {
+            return_vector.push(self[x].to_string());
+        }
+        return return_vector;
+    }
+}
+
+pub trait FormatVec {
+    fn format_vec(&self) -> String;
+}
+
+impl<T: std::fmt::Display> FormatVec for Vec<T> {
+    fn format_vec(&self) -> String {
+        let new_vec = self.into_iter().rev().collect::<Vec<_>>();
+        let mut return_string = "".to_owned();
+        for x in new_vec {
+            return_string = format!("{}\n{}", return_string, x);
+        }
+        if return_string.replace("\n", "") == "" {
+            return "Empty".to_owned()
+        } else {
+            return return_string
+        }
+    }
+}
+
+pub trait ConvertVec {
+    fn convert_vec(&self) -> String;
+}
+
+impl<T: std::fmt::Display> ConvertVec for Vec<T> {
+    fn convert_vec(&self) -> String {
+        let mut return_string = "".to_owned();
+        for x in self {
+            return_string = format!("{}ˌ{}", return_string, x);
+        }
+        if return_string.replace("ˌ", "") == "" {
+            return "".to_owned();
+        } else {
+            return return_string;
+        }
     }
 }
