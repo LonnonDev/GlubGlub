@@ -12,87 +12,48 @@ use crate::{format_items, useful::*};
 
 use crate::format_emojis;
 
-trait InVec: std::cmp::PartialEq + Sized {
-    fn in_vec(self, vector: Vec<Self>) -> bool {
-        vector.contains(&self)
-    }
-}
 
-impl<T> InVec for T where T: std::cmp::PartialEq {}
-
-trait ConvertCaseToSnake {
-    fn to_snakecase(&self) -> String;
-}
-
-impl ConvertCaseToSnake for String {
-    fn to_snakecase(&self) -> String {
-        let part1 = &self.to_uppercase()[0..1];
-        let part2 = &self.to_lowercase()[1..self.len()];
-        return format!("{}{}", part1, part2);
-    }
-}
-
-trait VecStrToString<T> {
-    fn vec_to_string(vector: Vec<T>) -> Vec<String>;
-}
-
-impl<T, S> VecStrToString<T> for Vec<S> where T: std::fmt::Display {
-    fn vec_to_string(vector: Vec<T>) -> Vec<String> {
-        let mut return_vector = vec![];
-        for x in 0..vector.len() {
-            return_vector.push(vector[x].to_string());
-        }
-        return return_vector;
-    }
-}
-
-trait FormatVec {
-    fn format_vec(&self) -> String;
-}
-
-impl<T: std::fmt::Display> FormatVec for Vec<T> {
-    fn format_vec(&self) -> String {
-        let mut return_string = "".to_owned();
-        for x in self {
-            return_string = format!("{}\n{}", return_string, x);
-        }
-        if return_string.replace("\n", "") == "" {
-            return "Empty".to_owned()
-        } else {
-            return return_string
-        }
-    }
-}
-
-trait ConvertVec {
-    fn convert_vec(&self) -> String;
-}
-
-impl<T: std::fmt::Display> ConvertVec for Vec<T> {
-    fn convert_vec(&self) -> String {
-        let mut return_string = "".to_owned();
-        for x in self {
-            return_string = format!("{}ˌ{}", return_string, x);
-        }
-        if return_string.replace("ˌ", "") == "" {
-            return "".to_owned()
-        } else {
-            return return_string
-        }
-    }
-}
-
+// TODO
 #[command]
 async fn use_sylladex(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let action = args.single::<String>().unwrap_or("nothing".to_owned()).to_lowercase();
-    let player = get_player(*msg.author.id.as_u64()).await?;
+    let _index = args.single::<u64>().unwrap_or(0);
+    let mut player = get_player(*msg.author.id.as_u64()).await?;
     // Get player sylladex type and then match their action
     match player.sylladex_type.as_str() {
+        // Stack modus
         "stack" => match action.as_str() {
-            "push" => (),
-            "pop" => (),
-            "push_storage" => (),
-            _ => sendmessage("Invalid Action\nValid actions are: `push`, `pop`, `push_storage`", ctx, msg).await,
+            "push" => {
+                let tmp = player.storage.pop().unwrap();
+                let storage = player.storage.convert_vec();
+                player.inventory.push(tmp.clone());
+                let inventory = player.inventory.convert_vec();
+                update_sqlstatement("inventory=$1, storage=$2", *msg.author.id.as_u64(), &[&inventory, &storage]).await.unwrap();
+                sendmessage(format_items!("Pushed `{}` onto the Stack", tmp).as_str(), ctx, msg).await;
+            },
+            "pop" => {
+                let tmp = player.inventory.pop().unwrap();
+                let inventory = player.inventory.convert_vec();
+                player.storage.push(tmp.clone());
+                let storage = player.storage.convert_vec();
+                update_sqlstatement("inventory=$1, storage=$2", *msg.author.id.as_u64(), &[&inventory, &storage]).await.unwrap();
+                sendmessage(format_items!("Pop `{}` into Storage", tmp).as_str(), ctx, msg).await;
+            },
+            "pop_trash" => {
+                let tmp = player.inventory.pop().unwrap();
+                if tmp == "disk" {
+                    sendmessage("You can not trash the Sburb Disk", ctx, msg).await;
+                } else {
+                    let inventory = player.inventory.convert_vec();
+                    update_sqlstatement("inventory=$1", *msg.author.id.as_u64(), &[&inventory]).await.unwrap();
+                    sendmessage(format_items!("Trashed `{}`", tmp).as_str(), ctx, msg).await;
+                }
+            }
+            _ => sendmessage("Invalid Action\nValid actions are: `push`, `pop`, `pop_trash`", ctx, msg).await,
+        },
+        // Queue modus
+        "queue" => match action.as_str() {
+            _ => sendmessage("Invalid Action\nValid actions are: `push_from_storage`, `pop`, `pop_storage`, `pop_to_storage`", ctx, msg).await,
         },
         _ => (),
     }
@@ -138,9 +99,9 @@ async fn information(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
         });
         e.field("Classpect", format_emojis!("{} of {} :{}:", player.class, player.aspect, player.aspect.to_lowercase()), false);
         e.field("Grist", format_emojis!("{}", info_message), false);
-        e.field("Inventory", format_items!("{}", player.inventory.format_vec()), true);
-        e.field("Storage", format_items!("{}", player.storage.format_vec()), true);
-        e.field("Sylladex", format!("{}", player.sylladex_type.to_string().to_snakecase()), true);
+        e.field("Sylladex", format_items!("```{}```", player.inventory.format_vec()), true);
+        e.field("Storage", format_items!("```{}```", player.storage.format_vec()), true);
+        e.field("Sylladex Modus", format!("{}", player.sylladex_type.to_snakecase()), true);
         e
     }).await;
 
