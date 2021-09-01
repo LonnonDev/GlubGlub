@@ -2,7 +2,7 @@ mod token;
 use crate::token::*;
 
 mod commands;
-use crate::commands::economy::*;
+use crate::commands::game::*;
 use crate::commands::owner::*;
 use crate::commands::general::*;
 
