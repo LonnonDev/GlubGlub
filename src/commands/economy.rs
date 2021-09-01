@@ -13,7 +13,6 @@ use crate::{format_items, useful::*};
 use crate::format_emojis;
 
 
-// TODO
 #[command]
 async fn use_sylladex(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let action = args.single::<String>().unwrap_or("nothing".to_owned()).to_lowercase();
